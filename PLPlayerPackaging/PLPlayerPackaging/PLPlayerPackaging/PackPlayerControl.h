@@ -8,15 +8,10 @@
 
 #import <UIKit/UIKit.h>
 #import "PackPlayerControlProtocol.h"
+#import "PlayerOuterProtocol.h"
 
 @class PackPlayerSlider;
 
-typedef NS_ENUM(NSInteger ,PlayerControlType) {
-    PlayerControlTypeNormalMini = 0,  //普通小屏
-    PlayerControlTypeNormalFull ,     //普通大屏
-    PlayerControlTypeLivingMini ,     //直播小屏
-    PlayerControlTypeLivingFull       //直播大屏
-};
 
 @interface PackPlayerControl : UIView
 @property (nonatomic, copy) NSString *title;
@@ -26,9 +21,18 @@ typedef NS_ENUM(NSInteger ,PlayerControlType) {
 @property (nonatomic, assign ,getter=isPlay)     BOOL   play;
 
 @property (nonatomic, weak) id<PackPlayerControlDelegate> controlDelegate;
+@property (nonatomic, weak) id<PlayerOuterProtocol> outerDelegate;
 
 - (instancetype)initWithType:(PlayerControlType)type;
 
 - (void)playTo:(double)time totalTime:(double)totalTime;
+
+- (void)playErrorStatus:(PlayerErrorStatus)status;
+
+- (void)startLoading;
+
+- (void)endLoading;
+
+- (void)errorBtnDismiss;
 
 @end

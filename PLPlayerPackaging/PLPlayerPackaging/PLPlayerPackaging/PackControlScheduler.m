@@ -11,6 +11,7 @@
 #import "PackPlayerSlider.h"
 
 @interface PackControlScheduler ()
+@property (nonatomic, assign) BOOL isLiving;
 @property (nonatomic, strong) PackPlayerControl *miniControl; //小屏控制层
 @property (nonatomic, strong) PackPlayerControl *fullControl; //大屏控制层
 
@@ -18,13 +19,21 @@
 @end
 @implementation PackControlScheduler
 
-- (instancetype)init
+- (instancetype)initWithType:(BOOL)isLiving;
 {
     self = [super init];
     if (self) {
-        _miniControl = [[PackPlayerControl alloc] initWithType:PlayerControlTypeNormalMini];
-        _fullControl = [[PackPlayerControl alloc] initWithType:PlayerControlTypeNormalFull];
+        _isLiving = isLiving;
+        if (!_isLiving) {
+            _miniControl = [[PackPlayerControl alloc] initWithType:PlayerControlTypeNormalMini];
+            _fullControl = [[PackPlayerControl alloc] initWithType:PlayerControlTypeNormalFull];
+        } else {
+            _miniControl = [[PackPlayerControl alloc] initWithType:PlayerControlTypeLivingMini];
+            _fullControl = [[PackPlayerControl alloc] initWithType:PlayerControlTypeLivingFull];
+
+        }
         _fullControl.hidden = YES;
+        
         
         [self addSubview:_miniControl];
         [self addSubview:_fullControl];
@@ -53,6 +62,7 @@
 
 - (void)setTitle:(NSString *)title {
     _title = title;
+//    _miniControl.title = title;
     _fullControl.title = title;
 }
 
@@ -62,16 +72,39 @@
     _fullControl.controlDelegate = _controlDelegate;
 }
 
+- (void)setOuterDelegate:(id<PlayerOuterProtocol>)outerDelegate {
+    _outerDelegate = outerDelegate;
+    _miniControl.outerDelegate = _outerDelegate;
+    _fullControl.outerDelegate = _outerDelegate;
+}
+
 - (void)setPlay:(BOOL)play {
     _play = play;
     [_fullControl setPlay:_play];
     [_miniControl setPlay:_play];
 
 }
+- (void)startLoading {
+    [_miniControl startLoading];
+    [_fullControl startLoading];
+}
+- (void)endLoading {
+    [_miniControl endLoading];
+    [_fullControl endLoading];
+}
+
+- (void)errorBtnDismiss {
+    [_miniControl errorBtnDismiss];
+    [_fullControl errorBtnDismiss];
+}
+
+- (void)playErrorStatus:(PlayerErrorStatus)status {
+    [_miniControl playErrorStatus:status];
+    [_fullControl playErrorStatus:status];
+}
 - (void)playTo:(double)time totalTime:(double)totalTime {
     [_fullControl playTo:time totalTime:totalTime];
     [_miniControl playTo:time totalTime:totalTime];
-
 }
 
 - (void)layoutSubviews {

@@ -23,6 +23,7 @@
     [_window makeKeyAndVisible];
     
     _window.rootViewController = [[UINavigationController alloc] initWithRootViewController:[ViewController new]];
+    
     // Override point for customization after application launch.
     return YES;
 }

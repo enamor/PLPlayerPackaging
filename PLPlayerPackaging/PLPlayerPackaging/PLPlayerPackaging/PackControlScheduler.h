@@ -8,6 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import "PackPlayerControlProtocol.h"
+#import "PlayerOuterProtocol.h"
+#import "PackPlayerControl.h"
 
 @interface PackControlScheduler : UIView
 @property (nonatomic, copy) NSString *title;
@@ -16,6 +18,17 @@
 @property (nonatomic, assign ,getter=isPlay)     BOOL   play;
 
 @property (nonatomic, weak) id<PackPlayerControlDelegate> controlDelegate;
+@property (nonatomic, weak) id<PlayerOuterProtocol> outerDelegate;
+
+- (instancetype)initWithType:(BOOL)isLiving;
+
+- (void)playErrorStatus:(PlayerErrorStatus)status;
 
 - (void)playTo:(double)time totalTime:(double)totalTime;
+
+- (void)startLoading;
+
+- (void)endLoading;
+
+- (void)errorBtnDismiss;
 @end

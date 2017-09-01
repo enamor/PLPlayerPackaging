@@ -37,11 +37,18 @@
 }
 
 - (void)btnaction {
-    [_player playWithUrl:@"http://baobab.wdjcdn.com/1456653443902B.mp4" onView:_playView];
+    //rtmp://hysport.bsrtmpplay.cdn.suicam.com/hysport/64867
+    
+//    NSString *url = @"rtmp://hysport.bsrtmpplay.cdn.suicam.com/hysport/64867";
+    
+    NSString *url = @"rtmp://live.hkstv.hk.lxdns.com/live/hks";
+//    NSString *url = @"http://baobab.wdjcdn.com/1456653443902B.mp4";
+    [_player playWithUrl:url onView:_playView];
     _player.title = @"哈哈哈哈哈哈哈";
 }
 - (void)dealloc {
     [self.player releasePlayer];
+    self.player = nil;
     NSLog(@"销毁");
 }
 
@@ -49,7 +56,7 @@
     [self.player releasePlayer];
 //    [_playView removeFromSuperview];
 //    self.playView = nil;
-    self.player = nil;
+//    self.player = nil;
 }
 
 - (void)didReceiveMemoryWarning {

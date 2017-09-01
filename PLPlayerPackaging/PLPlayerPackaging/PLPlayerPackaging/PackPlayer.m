@@ -11,19 +11,26 @@
 #import "PackControlScheduler.h"
 #import "PackPlayerControlProtocol.h"
 #import "PackPlayerMacro.h"
+#import "HJDanmaku.h"
+#import "IBCBarrageView.h"
 
+#import "AppDelegate+NI_Extension.h"
 #import "UINavigationController+NI_allowRote.h"
 #import "UITabBarController+NI_allRote.h"
-#import "AppDelegate+NI_Extension.h"
+
+#import "NINetMonitor.h"
 
 @interface PackPlayer ()<PLPlayerDelegate, PackPlayerControlDelegate>
 @property (nonatomic, strong) PLPlayer *player;
 @property (nonatomic, strong) PLPlayerOption *option;
 
-@property (nonatomic, strong) UIView *playView;
+@property (nonatomic, strong, readwrite) UIView *playView;
 
 //控制层
 @property (nonatomic, strong) PackControlScheduler *playerControl; //小屏控制层
+
+//弹幕
+@property (nonatomic, strong)IBCBarrageView *barrageView;
 
 @property (nonatomic, strong) NSURL *url;
 
@@ -41,21 +48,47 @@
 
 @property (nonatomic, assign) BOOL isSeeking;
 @property (nonatomic, assign) BOOL beforeBackIsPlay;//记录进入后台前播放状态
+@property (nonatomic, assign) BOOL isClosedBarrage;   //是否开启弹幕
 
 @property(nonatomic,strong) NSTimer *timer;
+
+
+@property(nonatomic,strong) NSTimer *loadingTimer;  //监听播放器状态 七牛播放器状态返回不对
+
+
+@property (nonatomic, strong) UIView *fullView;
 
 
 @end
 
 @implementation PackPlayer
 
+- (instancetype)initWithType:(BOOL)isLiving onView:(UIView *)view{
+    self = [super init];
+    if (self) {
+        _isLiving = isLiving;
+        _superPlayerView = view;
+    
+        self.playView = [[UIView alloc] init];
+        self.playView.backgroundColor = [UIColor blackColor];
+        self.barStyle = APP.statusBarStyle;
+        
+        [self p_initPlayerUI];
+        
+        
+        
+    }
+    return self;
+}
 - (instancetype)init
 {
     self = [super init];
     if (self) {
-        _playerControl = [[PackControlScheduler alloc] init];
+        
         self.playView = [[UIView alloc] init];
+        self.playView.backgroundColor = [UIColor blackColor];
         self.barStyle = APP.statusBarStyle;
+        
     }
     return self;
 }
@@ -71,18 +104,25 @@
 
 - (void)releasePlayer {
     [self endProcess];
-    
+    [self endLoadingTimer];
     
     [self.player stop];
-    [self.playView removeFromSuperview];
     [_player.playerView removeFromSuperview];
-    [_playerControl removeFromSuperview];
     self.player = nil;
+    
+    [self.playView removeFromSuperview];
+    [_playerControl removeFromSuperview];
+    self.playerControl = nil;
+    
+    [self p_removeObserver];
 }
 
-- (void)playWithUrl:(NSString *)strUrl onView:(UIView *)view {
-    view.backgroundColor = [UIColor grayColor];
+- (void)playWithUrl:(NSString *)strUrl onView:(UIView *)view{
     _superPlayerView = view;
+    [self playWithUrl:strUrl];
+}
+
+- (void)playWithUrl:(NSString *)strUrl {
     if (!strUrl) NSAssert(1<0, @"视频URL为空");
 #warning 需要处理中文路径过会再处理
     if ([strUrl hasPrefix:@"http://"] || [strUrl hasPrefix:@"https://"]) {
@@ -94,47 +134,92 @@
         _url = [NSURL fileURLWithPath:strUrl];
     }
     
-    if (_player) {
-        [self releasePlayer];
-    }
+    [self rePlay];
+}
+
+
+- (void)p_initPlayerUI {
+    [_superPlayerView addSubview:self.playView];
+    self.playView.frame = _superPlayerView.bounds;
     
+    [self.playView addSubview:self.playerControl];
+    _playerControl.frame = _playView.bounds;
+    _playerControl.controlDelegate = self;
+    _playerControl.outerDelegate = self.playerDelegate;
+    
+    [UIApplication sharedApplication].idleTimerDisabled = YES;
+    
+#warning 待七牛播放器问题修复后再解决
+//    [self p_initNetworkStatusObserver];
+}
+
+- (void)setPlayerDelegate:(id<PackPlayerDelegate>)playerDelegate {
+    _playerDelegate = playerDelegate;
+    _playerControl.outerDelegate = self.playerDelegate;
+}
+
+
+- (void)rePlay {
+    [self p_removeObserver];
+    [self.playerControl errorBtnDismiss];
+    
+    if (_player) {
+        [self endProcess];
+        [self.player stop];
+        [_player.playerView removeFromSuperview];
+        self.player = nil;
+    }
+    [self plPlayerPlay];
+}
+
+- (void)plPlayerPlay {
     // 初始化 PLPlayer
     self.player = [PLPlayer playerWithURL:_url option:self.option];
     
     // 设定代理 (optional)
     self.player.delegate = self;
-    
-    //获取视频输出视图并添加为到当前 UIView 对象的 Subview
-    [view addSubview:self.playView];
-    
-    [self.playView addSubview:_player.playerView];
-    self.playView.frame = view.bounds;
+    [self.playView insertSubview:_player.playerView atIndex:0];
     _player.playerView.frame = _playView.bounds;
-    [self.playView addSubview:_playerControl];
-    
-    _playerControl.frame = _playView.bounds;
-    _playerControl.controlDelegate = self;
-    
-    
-    [UIApplication sharedApplication].idleTimerDisabled = YES;
-    [self.player play];
+    [self play];
     
     [self p_initNotificatObserver];
 }
 
+- (void)initFrame {
+    if (!_isFullScreen) {
+        self.playView.frame = _superPlayerView.bounds;
+        _player.playerView.frame = _playView.bounds;
+        
+        _playerControl.frame = _playView.bounds;
+    }
+    
+}
+
 - (void)play {
     [self.player play];
-    [self startProcess];
+    
+    if (!_isLiving) {
+        [self startProcess];
+    }
+    
 }
 
 - (void)pause {
     [self.player pause];
-    [self endProcess];
+    [self.playerControl endLoading];
+    if (!_isLiving) {
+        [self endProcess];
+    }
+    
 }
 
 - (void)stop {
     [self.player stop];
-    [self endProcess];
+    [self.playerControl endLoading];
+    if (!_isLiving) {
+        [self endProcess];
+    }
+    
 }
 
 - (void)p_initNotificatObserver {
@@ -150,6 +235,34 @@
     //进入后他
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationWillResignActive) name:UIApplicationWillResignActiveNotification object:nil ];
     
+}
+
+- (void)p_initNetworkStatusObserver {
+    
+    __weak typeof(self) weakSelf = self;
+    [NINetMonitor startMonitorWithCallBack:^(NINetworkStatus networkStatus) {
+        switch (networkStatus) {
+            case NotReachable:
+                
+                [weakSelf pause];
+                [weakSelf.playerControl playErrorStatus:PlayerErrorStatusNotReachable];
+                break;
+            case ReachableViaWiFi:{
+                [weakSelf rePlay];
+            }
+    
+                break;
+            case ReachableViaWWAN:{
+                [weakSelf.player stop];
+                [weakSelf.playerControl playErrorStatus:PlayerErrorStatusNetViaWWAN];
+            }
+
+                break;
+                
+            default:
+                break;
+        }
+    }];
 }
 
 - (void)p_initDeviceOrientationObserver {
@@ -188,8 +301,10 @@
             break;
         case AVAudioSessionRouteChangeReasonOldDeviceUnavailable: {
             // 耳机拔掉
-            if (!_isLiving) {
+            if (_isLiving) {
                 [self play];
+            } else {
+                [self pause];
             }
             
             break;
@@ -209,7 +324,9 @@
     
     [self p_initDeviceOrientationObserver];
     if (_isFullScreen) {
-        APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
+        if ([APP_DELEGATE respondsToSelector:@selector(setAllowRotationType:)]) {
+            APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
+        }
     }
 }
 
@@ -221,8 +338,10 @@
     
     [self p_removeDeviceOrientationObserver];
     if (_isFullScreen) {
+        if ([APP_DELEGATE respondsToSelector:@selector(setAllowRotationType:)]) {
+            APP_DELEGATE.allowRotationType = AllowRotationMaskLandscapeLeftOrRight;
+        }
         
-        APP_DELEGATE.allowRotationType = AllowRotationMaskLandscapeLeftOrRight;
     }
 }
 
@@ -232,6 +351,13 @@
 
 // 实现 <PLPlayerDelegate> 来控制流状态的变更
 - (void)player:(nonnull PLPlayer *)player statusDidChange:(PLPlayerStatus)state {
+    
+    if (PLPlayerStatusCaching == state) {
+        [self.playerControl startLoading];
+        [self startLoadingTimer];
+    } else {
+        [self.playerControl endLoading];
+    }
     
     switch (state) {
         case PLPlayerStatusPreparing:
@@ -244,8 +370,8 @@
             
             break;
         case PLPlayerStatusPlaying:{
-            [self startProcess];
             [self.playerControl setPlay:YES];
+            [self.playerControl endLoading];
         }
             
             break;
@@ -256,7 +382,7 @@
             break;
         case PLPlayerStatusStopped:{
             [self.playerControl setPlay:NO];
-            [self endProcess];
+
         }
             
             break;
@@ -272,7 +398,6 @@
             break;
     }
     
-
     // 这里会返回流的各种状态，你可以根据状态做 UI 定制及各类其他业务操作
     // 除了 Error 状态，其他状态都会回调这个方法
     // 开始播放，当连接成功后，将收到第一个 PLPlayerStatusCaching 状态
@@ -280,17 +405,24 @@
     // 播放过程中出现卡顿时，将收到 PLPlayerStatusCaching 状态
     // 卡顿结束后，将收到 PLPlayerStatusPlaying 状态
     
-    if (PLPlayerStatusCaching == state) {
-//        [self.activityIndicatorView startAnimating];
-    } else {
-//        [self.activityIndicatorView stopAnimating];
-    }
+    
 
 }
 
 - (void)player:(nonnull PLPlayer *)player stoppedWithError:(nullable NSError *)error {
     // 当发生错误，停止播放时，会回调这个方法
     NSLog(@"%@",error);
+    if (_isFullScreen) {
+        [self fullScreen:UIDeviceOrientationPortrait];
+    }
+    [self.playerControl endLoading];
+    
+    if (NINetMonitor.currentReachabilityStatus == NotReachable) {
+        [self.playerControl playErrorStatus:PlayerErrorStatusNotReachable];
+    } else {
+        [self.playerControl playErrorStatus:PlayerErrorStatusError];
+    }
+    
 }
 
 - (void)player:(nonnull PLPlayer *)player codecError:(nonnull NSError *)error {
@@ -299,6 +431,18 @@
     // error.code 值为 PLPlayerErrorHWCodecInitFailed/PLPlayerErrorHWDecodeFailed
     // 播发器也将自动切换成软解，继续播放
     NSLog(@"%@",error);
+    
+    if (_isFullScreen) {
+        [self fullScreen:UIDeviceOrientationPortrait];
+    }
+    [self.playerControl endLoading];
+    
+    if (NINetMonitor.currentReachabilityStatus == NotReachable) {
+        [self.playerControl playErrorStatus:PlayerErrorStatusNotReachable];
+    } else {
+        [self.playerControl playErrorStatus:PlayerErrorStatusError];
+    }
+
 }
 
 
@@ -333,17 +477,48 @@
         }
     }
 }
+
+- (void)playerControl:(UIView *)control shareAction:(UIButton *)sender {
+    if (_playerDelegate) {
+        if ([_playerDelegate respondsToSelector:@selector(playerShareBtnAction)]) {
+            [_playerDelegate playerShareBtnAction];
+        }
+    }
+}
+
+- (void)playerControl:(UIView *)control errorAction:(PlayerErrorStatus)status {
+    switch (status) {
+        case PlayerErrorStatusError:{
+            [self rePlay];
+        }
+            
+            break;
+        case PlayerErrorStatusNetViaWWAN:{
+            [self rePlay];
+        }
+            
+            break;
+        case PlayerErrorStatusNotReachable:
+            
+            break;
+            
+        default:
+            break;
+    }
+}
+
 - (void)playerControl:(UIView *)control fullScreenAction:(UIButton *)sender {
     if (_isFullScreen) {
         _isLock = NO;
         [self fullScreen:UIDeviceOrientationPortrait];
         
     }else {
-        if (!sender.selected) {
-            [self fullScreen:UIDeviceOrientationLandscapeLeft];
-        } else {
-            [self fullScreen:UIDeviceOrientationPortrait];
-        }
+        [self fullScreen:UIDeviceOrientationLandscapeLeft];
+//        if (!sender.selected) {
+//            
+//        } else {
+//            [self fullScreen:UIDeviceOrientationPortrait];
+//        }
     }
 
 }
@@ -389,6 +564,17 @@
 
 
 #pragma mark - Public
+/**
+ 进入全屏
+ */
+- (void)becomeFullScreen {
+     [self fullScreen:UIDeviceOrientationLandscapeLeft];
+}
+- (void)becomeMiniScreen {
+    [self fullScreen:UIDeviceOrientationPortrait];
+}
+
+
 - (void)fullScreen:(UIDeviceOrientation)orientation {
     if (![self judgeIfCanRotate:orientation]) return;
     
@@ -398,27 +584,25 @@
     if (orientation == UIDeviceOrientationLandscapeLeft
         ||orientation ==UIDeviceOrientationLandscapeRight ) { //全屏
         [self.playView removeFromSuperview];
-        [[UIApplication sharedApplication].keyWindow addSubview:self.playView];
-        if ( _player.width < _player.height) {
-            //竖屏视频
-            CGRect frame = [UIApplication sharedApplication].keyWindow.bounds;
-            [self resetFrame:frame];
-            
-            _isLock = YES;
-            self.isFullScreen = YES;
-            APP.statusBarStyle = UIStatusBarStyleLightContent;
-            return;
-        }
-        CGFloat height = self.playView.superview.frame.size.width;
-        CGFloat width = self.playView.superview.frame.size.height;
         
+        APP_DELEGATE.allowRotationType = AllowRotationMaskLandscapeLeftOrRight;
+        
+        [[UIApplication sharedApplication].keyWindow addSubview:self.playView];
+        
+        CGFloat width = MAX(SCREEN_WIDTH, SCREEN_HEIGHT);
+        CGFloat height = MIN(SCREEN_WIDTH, SCREEN_HEIGHT);
+        _playerControl.hidden = YES;
         [UIView animateWithDuration:0.3f animations:^{
             if (!_isFullScreen) {
                 CGRect frame = CGRectMake((height - width)/2.0,(width - height)/2.0, width, height);
+                
                 [self resetFrame:frame];
             }
             [self.playView setTransform:tranform];
             
+        }completion:^(BOOL finished) {
+            _playerControl.hidden = NO;
+            [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:orientation] forKey:@"orientation"];
         }];
         
         APP.statusBarOrientation = (UIInterfaceOrientation)orientation;
@@ -432,11 +616,16 @@
     } else if (orientation == UIDeviceOrientationPortrait) { //小屏幕
         [self.playView removeFromSuperview];
         
+        APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
         //移除亮度控制
         [self.superPlayerView addSubview:self.playView];
+        _playerControl.hidden = YES;
         [UIView animateWithDuration:0.3f animations:^{
             [self.playView setTransform:tranform];
             [self resetFrame:_superPlayerView.bounds];
+        }completion:^(BOOL finished) {
+            _playerControl.hidden = NO;
+            [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:orientation] forKey:@"orientation"];
         }];
         
         APP.statusBarOrientation = UIInterfaceOrientationPortrait;
@@ -464,6 +653,39 @@
 - (void)setIsFullScreen:(BOOL)isFullScreen {
     _isFullScreen = isFullScreen;
     [self.playerControl setFullSize:_isFullScreen];
+    
+    
+    if (_isFullScreen && !_isClosedBarrage) {
+        [self showBarrageView];
+
+    }else {
+        [self.barrageView clearScreen];
+        [self.barrageView removeFromSuperview];
+    }
+    
+}
+
+//弹幕
+- (void)playerBarrageAction:(UIButton *)sender {
+    _isClosedBarrage = sender.selected;
+    if (_isFullScreen && !_isClosedBarrage) {
+        [self showBarrageView];
+
+    } else {
+        [self.barrageView removeFromSuperview];
+    }
+}
+
+- (void)sendBarrageWithText:(NSString *)text {
+    if (_isFullScreen && !_isClosedBarrage) {
+        [self.barrageView sendBarrage:text];
+    }
+}
+
+- (void)showBarrageView {
+    [self.playView addSubview:self.barrageView];
+    self.barrageView.frame = CGRectMake(0, _playerControl.frame.origin.y + 49, _playerControl.frame.size.width,_playerControl.frame.size.height - 49 );
+    self.barrageView.userInteractionEnabled = NO;
 }
 
 
@@ -496,15 +718,38 @@
 
 
 - (void)startProcess {
+    if (_isLiving) return;
     if (!_timer) {
         _timer = [NSTimer scheduledTimerWithTimeInterval:1.f target:self selector:@selector(timerFunction:) userInfo:nil repeats:YES];
     }
 }
 
+- (void)startLoadingTimer {
+    if (!_loadingTimer) {
+        _loadingTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(loadingObserver) userInfo:nil repeats:YES];
+    }
+}
+
+
 - (void) endProcess {
+    if (_isLiving) return;
     if (_timer) {
         [_timer invalidate];
         self.timer  = nil;
+    }
+}
+
+- (void)loadingObserver {
+    if ([self.player isPlaying]) {
+        [self.playerControl endLoading];
+    }
+    [self endLoadingTimer];
+}
+
+- (void)endLoadingTimer {
+    if (_loadingTimer) {
+        [_loadingTimer invalidate];
+        self.loadingTimer  = nil;
     }
 }
 
@@ -517,5 +762,24 @@
         [_playerControl playTo:currentTime totalTime:totalTime];
     }
 }
+
+- (PackControlScheduler *)playerControl {
+    if (!_playerControl) {
+        _playerControl = [[PackControlScheduler alloc] initWithType:_isLiving];
+    }
+    return _playerControl;
+}
+
+- (IBCBarrageView *)barrageView {
+    if (!_barrageView) {
+        _barrageView = [[IBCBarrageView alloc] init];
+    }
+    return _barrageView;
+}
+
+- (BOOL)isFullSize {
+    return _isFullScreen;
+}
+
 
 @end

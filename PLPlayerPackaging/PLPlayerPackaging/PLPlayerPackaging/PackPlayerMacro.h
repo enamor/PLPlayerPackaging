@@ -21,6 +21,11 @@
 
 #define  weakly  __weak typeof(self) weakSelf = self;
 
+//点击聊天 通知外部
+#define Will_Chat @"Will_Chat"
+#define Will_Chat_Notification [[NSNotificationCenter defaultCenter] postNotificationName:Will_Chat object:nil]
+
+
 
 /** 获取NIPlayer.bundle中图片 */
 #define BUNDLE_PATH [[NSBundle mainBundle] pathForResource:@"Pack" ofType:@"bundle"]

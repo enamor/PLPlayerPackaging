@@ -42,6 +42,8 @@ typedef NS_ENUM(NSInteger, PLPlayerError) {
     
     PLPlayerErrorDecodeNoFrame = -2205, // "decode no frame."
     
+    PLPlayerErrorVideoSizeChange = -2206, // "video size change, should stop and replay."
+    
     // RTMP error
     PLPlayerErrorRTMPErrorUnknowOption = -999, // "Unknown option %s"
     
@@ -81,6 +83,8 @@ typedef NS_ENUM(NSInteger, PLPlayerError) {
     PLPlayerErrorRTMPErrorTLSConnectFailed = -1200,	//	"TLS_Connect failed"
     
     PLPlayerErrorRTMPErrorNoSSLOrTLSSupport = -1201,	//	"No SSL/TLS support"
+    
+    PLPlayerErrorHTTPErrorHTTPConnectFailed = -1202, // "HTTP connect failed"
 };
 
 
