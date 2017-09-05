@@ -25,9 +25,9 @@
                             <rect key="frame" x="0.0" y="0.0" width="400" height="44"/>
                             <subviews>
                                 <button opaque="NO" tag="121" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="PAI-LR-Abg" userLabel="返回">
-                                    <rect key="frame" x="4" y="0.0" width="31" height="44"/>
+                                    <rect key="frame" x="8" y="0.0" width="32" height="44"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" constant="31" id="FgC-aZ-QI2"/>
+                                        <constraint firstAttribute="width" constant="32" id="FgC-aZ-QI2"/>
                                         <constraint firstAttribute="height" constant="44" id="NYL-5q-aXw"/>
                                     </constraints>
                                     <state key="normal" image="miniplayer_button_back.png"/>
@@ -36,7 +36,7 @@
                                     </connections>
                                 </button>
                                 <label opaque="NO" userInteractionEnabled="NO" tag="122" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lFh-hv-h7R" userLabel="标题">
-                                    <rect key="frame" x="45" y="0.0" width="345" height="44"/>
+                                    <rect key="frame" x="50" y="0.0" width="340" height="44"/>
                                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                     <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
@@ -50,7 +50,7 @@
                                 <constraint firstAttribute="bottom" secondItem="lFh-hv-h7R" secondAttribute="bottom" id="YZY-MI-2MP"/>
                                 <constraint firstItem="PAI-LR-Abg" firstAttribute="top" secondItem="0h1-iS-SWw" secondAttribute="top" id="pOd-6l-GMP"/>
                                 <constraint firstAttribute="height" constant="44" id="tj4-Zo-zW5"/>
-                                <constraint firstItem="PAI-LR-Abg" firstAttribute="leading" secondItem="0h1-iS-SWw" secondAttribute="leading" constant="4" id="twX-f3-2EK"/>
+                                <constraint firstItem="PAI-LR-Abg" firstAttribute="leading" secondItem="0h1-iS-SWw" secondAttribute="leading" constant="8" id="twX-f3-2EK"/>
                             </constraints>
                         </view>
                     </subviews>
@@ -75,16 +75,6 @@
                         <view tag="220" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="vVt-5G-JaM">
                             <rect key="frame" x="0.0" y="36" width="400" height="44"/>
                             <subviews>
-                                <button opaque="NO" tag="222" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nmU-me-7h4" userLabel="全屏">
-                                    <rect key="frame" x="356" y="0.0" width="44" height="44"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" constant="44" id="ry9-gf-eZw"/>
-                                    </constraints>
-                                    <state key="normal" image="miniplayer_icon_fullsize.png"/>
-                                    <connections>
-                                        <action selector="fullSizeAction:" destination="iN0-l3-epB" eventType="touchUpInside" id="bLZ-ix-5H2"/>
-                                    </connections>
-                                </button>
                                 <label opaque="NO" userInteractionEnabled="NO" tag="301" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="00:00" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vaU-rH-Ky7" userLabel="当前时间">
                                     <rect key="frame" x="10" y="0.0" width="41" height="44"/>
                                     <constraints>
@@ -95,7 +85,7 @@
                                     <nil key="highlightedColor"/>
                                 </label>
                                 <label opaque="NO" userInteractionEnabled="NO" tag="302" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="00:00" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NF4-8Y-iVs" userLabel="总时长">
-                                    <rect key="frame" x="300" y="0.0" width="41" height="44"/>
+                                    <rect key="frame" x="304" y="0.0" width="41" height="44"/>
                                     <constraints>
                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="41" id="rt2-md-yqq"/>
                                     </constraints>
@@ -104,8 +94,18 @@
                                     <nil key="highlightedColor"/>
                                 </label>
                                 <slider opaque="NO" tag="303" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="jSw-QW-3Rs" customClass="PackPlayerSlider">
-                                    <rect key="frame" x="59" y="0.0" width="233" height="45"/>
+                                    <rect key="frame" x="59" y="0.0" width="237" height="45"/>
                                 </slider>
+                                <button opaque="NO" tag="222" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nmU-me-7h4" userLabel="全屏">
+                                    <rect key="frame" x="360" y="0.0" width="32" height="44"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="32" id="ry9-gf-eZw"/>
+                                    </constraints>
+                                    <state key="normal" image="miniplayer_icon_fullsize.png"/>
+                                    <connections>
+                                        <action selector="fullSizeAction:" destination="iN0-l3-epB" eventType="touchUpInside" id="bLZ-ix-5H2"/>
+                                    </connections>
+                                </button>
                             </subviews>
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             <constraints>
@@ -122,7 +122,7 @@
                                 <constraint firstItem="nmU-me-7h4" firstAttribute="top" secondItem="vVt-5G-JaM" secondAttribute="top" id="fOd-fT-uWb"/>
                                 <constraint firstItem="jSw-QW-3Rs" firstAttribute="leading" secondItem="vaU-rH-Ky7" secondAttribute="trailing" constant="10" id="kir-gt-nAk"/>
                                 <constraint firstAttribute="bottom" secondItem="vaU-rH-Ky7" secondAttribute="bottom" id="nii-jd-94y"/>
-                                <constraint firstAttribute="trailing" secondItem="nmU-me-7h4" secondAttribute="trailing" id="pOH-xl-t9m"/>
+                                <constraint firstAttribute="trailing" secondItem="nmU-me-7h4" secondAttribute="trailing" constant="8" id="pOH-xl-t9m"/>
                             </constraints>
                         </view>
                     </subviews>
@@ -139,9 +139,9 @@
                     </constraints>
                 </view>
                 <button opaque="NO" tag="221" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qrT-wC-34V" userLabel="播放">
-                    <rect key="frame" x="180" y="80" width="40" height="40"/>
+                    <rect key="frame" x="170" y="80" width="60" height="40"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="40" id="PAj-Hq-c5q"/>
+                        <constraint firstAttribute="width" constant="60" id="PAj-Hq-c5q"/>
                         <constraint firstAttribute="height" constant="40" id="qMt-5m-Kn0"/>
                     </constraints>
                     <state key="normal" image="miniplayer_bottom_play.png"/>
@@ -194,9 +194,9 @@
                             <rect key="frame" x="0.0" y="20" width="400" height="44"/>
                             <subviews>
                                 <button opaque="NO" tag="121" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UmX-ab-ktc" userLabel="返回">
-                                    <rect key="frame" x="4" y="0.0" width="31" height="44"/>
+                                    <rect key="frame" x="8" y="0.0" width="32" height="44"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" constant="31" id="Jlh-Wv-oWg"/>
+                                        <constraint firstAttribute="width" constant="32" id="Jlh-Wv-oWg"/>
                                         <constraint firstAttribute="height" constant="44" id="dJP-Bv-a6O"/>
                                     </constraints>
                                     <state key="normal" image="miniplayer_button_back.png"/>
@@ -205,7 +205,7 @@
                                     </connections>
                                 </button>
                                 <label opaque="NO" userInteractionEnabled="NO" tag="122" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O0b-AM-V8f" userLabel="标题">
-                                    <rect key="frame" x="45" y="0.0" width="345" height="44"/>
+                                    <rect key="frame" x="50" y="0.0" width="330" height="44"/>
                                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                     <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
@@ -213,9 +213,9 @@
                             </subviews>
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             <constraints>
-                                <constraint firstItem="UmX-ab-ktc" firstAttribute="leading" secondItem="seZ-je-bby" secondAttribute="leading" constant="4" id="3oZ-rK-zbp"/>
+                                <constraint firstItem="UmX-ab-ktc" firstAttribute="leading" secondItem="seZ-je-bby" secondAttribute="leading" constant="8" id="3oZ-rK-zbp"/>
                                 <constraint firstItem="O0b-AM-V8f" firstAttribute="top" secondItem="seZ-je-bby" secondAttribute="top" id="5wa-5l-WyE"/>
-                                <constraint firstAttribute="trailing" secondItem="O0b-AM-V8f" secondAttribute="trailing" constant="10" id="A0J-Qg-HQC"/>
+                                <constraint firstAttribute="trailing" secondItem="O0b-AM-V8f" secondAttribute="trailing" constant="20" id="A0J-Qg-HQC"/>
                                 <constraint firstAttribute="bottom" secondItem="O0b-AM-V8f" secondAttribute="bottom" id="Vk4-yu-xtr"/>
                                 <constraint firstItem="UmX-ab-ktc" firstAttribute="top" secondItem="seZ-je-bby" secondAttribute="top" id="fDl-IH-Ogl"/>
                                 <constraint firstItem="O0b-AM-V8f" firstAttribute="leading" secondItem="UmX-ab-ktc" secondAttribute="trailing" constant="10" id="fp9-HH-0HC"/>
@@ -245,27 +245,17 @@
                             <rect key="frame" x="0.0" y="36" width="400" height="44"/>
                             <subviews>
                                 <button opaque="NO" tag="221" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2Bw-mf-Vco" userLabel="播放">
-                                    <rect key="frame" x="0.0" y="0.0" width="44" height="44"/>
+                                    <rect key="frame" x="8" y="8" width="32" height="28"/>
                                     <constraints>
-                                        <constraint firstAttribute="width" constant="44" id="qbk-Cv-JqN"/>
+                                        <constraint firstAttribute="width" constant="32" id="qbk-Cv-JqN"/>
                                     </constraints>
                                     <state key="normal" image="miniplayer_bottom_play.png"/>
                                     <connections>
                                         <action selector="playAction:" destination="Nub-eD-beB" eventType="touchUpInside" id="wMU-5m-U8O"/>
                                     </connections>
                                 </button>
-                                <button opaque="NO" tag="222" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="7gx-9L-uL4" userLabel="全屏">
-                                    <rect key="frame" x="356" y="0.0" width="44" height="44"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" constant="44" id="Dif-Ho-NVD"/>
-                                    </constraints>
-                                    <state key="normal" image="miniplayer_icon_fullsize.png"/>
-                                    <connections>
-                                        <action selector="fullSizeAction:" destination="Nub-eD-beB" eventType="touchUpInside" id="LTN-Cq-svE"/>
-                                    </connections>
-                                </button>
                                 <label opaque="NO" userInteractionEnabled="NO" tag="301" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="00:00" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7nM-LR-Qgf">
-                                    <rect key="frame" x="49" y="0.0" width="41.5" height="44"/>
+                                    <rect key="frame" x="45" y="0.0" width="41.5" height="44"/>
                                     <constraints>
                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="42" id="u6U-hm-N3p"/>
                                     </constraints>
@@ -274,7 +264,7 @@
                                     <nil key="highlightedColor"/>
                                 </label>
                                 <label opaque="NO" userInteractionEnabled="NO" tag="302" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="00:00" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6KP-wT-frv">
-                                    <rect key="frame" x="309" y="0.0" width="42" height="44"/>
+                                    <rect key="frame" x="299" y="0.0" width="42" height="44"/>
                                     <constraints>
                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="42" id="bhO-Dz-Nex"/>
                                     </constraints>
@@ -283,27 +273,37 @@
                                     <nil key="highlightedColor"/>
                                 </label>
                                 <slider opaque="NO" tag="303" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="tii-a4-z4x" customClass="PackPlayerSlider">
-                                    <rect key="frame" x="93.5" y="0.0" width="212.5" height="45"/>
+                                    <rect key="frame" x="94.5" y="0.0" width="196.5" height="45"/>
                                 </slider>
+                                <button opaque="NO" tag="222" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="7gx-9L-uL4" userLabel="全屏">
+                                    <rect key="frame" x="356" y="0.0" width="32" height="44"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="32" id="Dif-Ho-NVD"/>
+                                    </constraints>
+                                    <state key="normal" image="miniplayer_icon_fullsize.png"/>
+                                    <connections>
+                                        <action selector="fullSizeAction:" destination="Nub-eD-beB" eventType="touchUpInside" id="LTN-Cq-svE"/>
+                                    </connections>
+                                </button>
                             </subviews>
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             <constraints>
                                 <constraint firstAttribute="bottom" secondItem="6KP-wT-frv" secondAttribute="bottom" id="18l-g6-GCn"/>
-                                <constraint firstItem="7gx-9L-uL4" firstAttribute="leading" secondItem="6KP-wT-frv" secondAttribute="trailing" constant="5" id="1c4-J1-U9V"/>
-                                <constraint firstItem="2Bw-mf-Vco" firstAttribute="top" secondItem="rpQ-8v-kaV" secondAttribute="top" id="54z-x2-LQ0"/>
+                                <constraint firstItem="7gx-9L-uL4" firstAttribute="leading" secondItem="6KP-wT-frv" secondAttribute="trailing" constant="15" id="1c4-J1-U9V"/>
+                                <constraint firstItem="2Bw-mf-Vco" firstAttribute="top" secondItem="rpQ-8v-kaV" secondAttribute="top" constant="8" id="54z-x2-LQ0"/>
                                 <constraint firstAttribute="bottom" secondItem="7nM-LR-Qgf" secondAttribute="bottom" id="7zA-Vg-lsY"/>
-                                <constraint firstAttribute="trailing" secondItem="7gx-9L-uL4" secondAttribute="trailing" id="9QA-Wt-bEa"/>
-                                <constraint firstAttribute="bottom" secondItem="2Bw-mf-Vco" secondAttribute="bottom" id="L0s-9G-oyc"/>
+                                <constraint firstAttribute="trailing" secondItem="7gx-9L-uL4" secondAttribute="trailing" constant="12" id="9QA-Wt-bEa"/>
+                                <constraint firstAttribute="bottom" secondItem="2Bw-mf-Vco" secondAttribute="bottom" constant="8" id="L0s-9G-oyc"/>
                                 <constraint firstItem="7gx-9L-uL4" firstAttribute="top" secondItem="rpQ-8v-kaV" secondAttribute="top" id="U8S-rc-fkd"/>
                                 <constraint firstItem="6KP-wT-frv" firstAttribute="top" secondItem="rpQ-8v-kaV" secondAttribute="top" id="eri-xv-IJK"/>
                                 <constraint firstItem="7nM-LR-Qgf" firstAttribute="top" secondItem="rpQ-8v-kaV" secondAttribute="top" id="fcY-uQ-tTw"/>
-                                <constraint firstItem="tii-a4-z4x" firstAttribute="leading" secondItem="7nM-LR-Qgf" secondAttribute="trailing" constant="5" id="hHs-ug-tgC"/>
+                                <constraint firstItem="tii-a4-z4x" firstAttribute="leading" secondItem="7nM-LR-Qgf" secondAttribute="trailing" constant="10" id="hHs-ug-tgC"/>
                                 <constraint firstAttribute="bottom" secondItem="tii-a4-z4x" secondAttribute="bottom" id="jU9-NX-lEy"/>
-                                <constraint firstItem="6KP-wT-frv" firstAttribute="leading" secondItem="tii-a4-z4x" secondAttribute="trailing" constant="5" id="kL4-Uq-WHk"/>
+                                <constraint firstItem="6KP-wT-frv" firstAttribute="leading" secondItem="tii-a4-z4x" secondAttribute="trailing" constant="10" id="kL4-Uq-WHk"/>
                                 <constraint firstAttribute="bottom" secondItem="7gx-9L-uL4" secondAttribute="bottom" id="khv-Vx-brq"/>
                                 <constraint firstItem="7nM-LR-Qgf" firstAttribute="leading" secondItem="2Bw-mf-Vco" secondAttribute="trailing" constant="5" id="krF-1M-n8i"/>
                                 <constraint firstItem="tii-a4-z4x" firstAttribute="top" secondItem="rpQ-8v-kaV" secondAttribute="top" id="ngc-8A-A01"/>
-                                <constraint firstItem="2Bw-mf-Vco" firstAttribute="leading" secondItem="rpQ-8v-kaV" secondAttribute="leading" id="td3-AF-De6"/>
+                                <constraint firstItem="2Bw-mf-Vco" firstAttribute="leading" secondItem="rpQ-8v-kaV" secondAttribute="leading" constant="8" id="td3-AF-De6"/>
                                 <constraint firstAttribute="height" constant="44" id="xLt-3F-wfa"/>
                             </constraints>
                         </view>
@@ -517,9 +517,9 @@
                                         <action selector="backAction:" destination="mqk-id-HkS" eventType="touchUpInside" id="b6r-Mw-TJm"/>
                                     </connections>
                                 </button>
-                                <label opaque="NO" userInteractionEnabled="NO" tag="122" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dPV-eh-bRl" userLabel="标题">
+                                <label opaque="NO" userInteractionEnabled="NO" tag="122" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dPV-eh-bRl" userLabel="标题">
                                     <rect key="frame" x="50" y="0.0" width="330" height="44"/>
-                                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                    <fontDescription key="fontDescription" type="system" pointSize="18"/>
                                     <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
                                 </label>

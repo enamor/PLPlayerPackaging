@@ -69,6 +69,12 @@
     return [super thumbRectForBounds:bounds trackRect:rect value:value];
 }
 
+- (CGRect)trackRectForBounds:(CGRect)bounds {
+    bounds.origin.y = bounds.size.height / 2.0 - 1;
+    bounds.size.height = 2;
+    return bounds;
+}
+
 @end
 
 @implementation PackPlayerCacheSlider
@@ -77,6 +83,12 @@
     rect.origin.x = rect.origin.x - 11 ;
     rect.size.width = rect.size.width + 22;
     return CGRectInset ([super thumbRectForBounds:bounds trackRect:rect value:value], 11 , 11);
+}
+
+- (CGRect)trackRectForBounds:(CGRect)bounds {
+    bounds.origin.y = bounds.size.height / 2.0 - 1;
+    bounds.size.height = 2;
+    return bounds;
 }
 
 @end

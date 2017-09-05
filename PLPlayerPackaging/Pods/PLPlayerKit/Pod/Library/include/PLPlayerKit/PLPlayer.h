@@ -2,8 +2,8 @@
 //  PLPlayer.h
 //  PLPlayerKit
 //
-//  Created by 何昊宇 on 2017/5/15.
-//  Copyright © 2017年 Aaron. All rights reserved.
+//  Created on 15/10/15.
+//  Copyright © 2015年 Pili Engineering. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -12,6 +12,7 @@
 
 @class UIView;
 @class UIImageView;
+
 
 /**
  @brief 音频采样格式
@@ -36,7 +37,7 @@ typedef NS_ENUM(NSInteger, PLPlayerAVSampleFormat) {
 };
 
 /**
- @brief 播放画面旋转模式
+ @brief 播放画面旋转模式 
  
  @since v2.3.0
  */
@@ -118,12 +119,7 @@ typedef NS_ENUM(NSInteger, PLPlayerStatus) {
     /**
      *  PLPlayer 自动重连的状态
      */
-    PLPlayerStateAutoReconnecting,
-    
-    /**
-     *  PLPlayer 播放完成（该状态只针对点播有效）
-     */
-    PLPlayerStatusCompleted
+    PLPlayerStateAutoReconnecting
     
 };
 
@@ -135,6 +131,7 @@ typedef NS_ENUM(NSInteger, PLPlayerStatus) {
 extern NSString * _Nonnull playerVersion();
 
 @class PLPlayer;
+
 /**
  发送队列的代理协议。
  
@@ -183,20 +180,31 @@ extern NSString * _Nonnull playerVersion();
 - (void)player:(nonnull PLPlayer *)player stoppedWithError:(nullable NSError *)error;
 
 /**
- 点播已缓冲区域
+ 回调将要渲染的帧数据
+ 该功能只支持直播
  
- @param timeRange  CMTimeRange , 表示当前缓冲区域，单位秒。
+ @param player 调用该方法的 PLPlayer 对象
+ @param frame  将要渲染帧 YUV 数据。
+ CVPixelBufferGetPixelFormatType 获取 YUV 的类型。
+ 软解为 kCVPixelFormatType_420YpCbCr8Planar.
+ 硬解为 kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange.
  
- @waring 仅对点播有效
+ @deprecated Use - (void)player:(nonnull PLPlayer *)player willRenderFrame:(nullable CVPixelBufferRef)frame pts:(int64_t)pts sarNumerator:(int)sarNumerator sarDenominator:(int)sarDenominator;;
  
- @since v2.4.1
+ @since v2.2.3
  */
-- (void)player:(nonnull PLPlayer *)player loadedTimeRange:(CMTimeRange)timeRange;
+- (void)player:(nonnull PLPlayer *)player willRenderFrame:(nullable CVPixelBufferRef)frame;
+
+/**
+ @deprecated Use - (nonnull AudioBufferList *)player:(nonnull PLPlayer *)player willAudioRenderBuffer:(nonnull AudioBufferList *)audioBufferList asbd:(AudioStreamBasicDescription)audioStreamDescription pts:(int64_t)pts sampleFormat:(PLPlayerAVSampleFormat)sampleFormat;
+ */
+
+- (nonnull AudioBufferList *)player:(nonnull PLPlayer *)player willAudioRenderBuffer:(nonnull AudioBufferList *)audioBufferList;
 
 /**
  回调将要渲染的帧数据
  该功能只支持直播
- 
+
  @param player 调用该方法的 PLPlayer 对象
  @param frame 将要渲染帧 YUV 数据。
  CVPixelBufferGetPixelFormatType 获取 YUV 的类型。
@@ -215,7 +223,7 @@ extern NSString * _Nonnull playerVersion();
 
 /**
  回调音频数据
- 
+
  @param player 调用该方法的 PLPlayer 对象
  @param audioBufferList 音频数据
  @param audioStreamDescription 音频格式信息
@@ -226,6 +234,28 @@ extern NSString * _Nonnull playerVersion();
  @since v2.4.3
  */
 - (nonnull AudioBufferList *)player:(nonnull PLPlayer *)player willAudioRenderBuffer:(nonnull AudioBufferList *)audioBufferList asbd:(AudioStreamBasicDescription)audioStreamDescription pts:(int64_t)pts sampleFormat:(PLPlayerAVSampleFormat)sampleFormat;
+
+/**
+ 解码器错误
+ 
+ @discussion 解码器错误主要包括 video toolbox 硬解码器初始化失败和解码失败等。
+ 
+ @waring 收到解码器错误不代表播放已经停止。
+ 
+ @since v2.4.0
+ */
+- (void)player:(nonnull PLPlayer *)player codecError:(nonnull NSError *)error;
+
+/**
+ 点播已缓冲区域
+ 
+ @param timeRange  CMTimeRange , 表示当前缓冲区域，单位秒。
+ 
+ @waring 仅对 AVPlayer 点播有效
+ 
+ @since v2.4.1
+ */
+- (void)player:(nonnull PLPlayer *)player loadedTimeRange:(CMTimeRange)timeRange;
 
 @end
 
@@ -274,7 +304,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
  
  @since v1.0.0
  */
-@property (nonatomic, copy, nonnull, readonly) NSURL *URL;
+@property (nonatomic, copy, nonnull, readonly) NSURL *  URL;
 
 /**
  PLPlayer 的播放状态
@@ -288,7 +318,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
  
  @since v2.1.0
  */
-@property (nonnull, strong, readonly) PLPlayerOption *option;
+@property (nonnull, strong, readonly) PLPlayerOption *    option;
 
 /**
  指示当前 PLPlayer 是否处于正在播放状态
@@ -302,7 +332,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
  
  @since v1.0.0
  */
-@property (nonatomic, strong, nullable, readonly) UIView *playerView;
+@property (nonatomic, strong, nullable, readonly) UIView *  playerView;
 
 /**
  PLPlayer 的启动图
@@ -311,7 +341,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
  
  @since v2.4.0
  */
-@property (nonatomic, strong, nullable) UIImageView *launchView;
+@property (nonatomic, strong, nullable, readonly) UIImageView *launchView;
 
 /**
  是否需要静音 PLPlayer，默认值为NO
@@ -370,7 +400,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 
 #pragma mark -- play info
 
-/**
+/** 
  meta data
  
  @since v2.4.0
@@ -414,6 +444,16 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 @property (nonatomic, assign, readonly) int height;
 
 /**
+ 视频流的显示比例
+ 
+ @discussion displayRatioWidth = 0 表示该参数无效
+ 
+ @since v2.4.0
+ */
+@property (nonatomic, assign, readonly) int displayRatioWidth;
+@property (nonatomic, assign, readonly) int displayRatioHeight;
+
+/**
  视频流的帧率
  
  @warning 该属性仅 rtmp/flv 直播有效。
@@ -449,23 +489,21 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
  */
 @property (nonatomic, assign, readonly) double downSpeed;
 
-/**
- 私有DRM
- 
- @waring 该属性仅对 HLS 点播有效
- 
- @since v3.0.0
- */
-@property (nonatomic, strong) NSString * _Nullable DRMKey;
+#pragma mark AVPlayer
 
 /**
- 变速播放，范围是 0.2-32，默认是 1.0
+ AVPlayer 
  
- @waring 该属性仅对点播有效
- 
- @since v3.0.0
+ @since v2.4.1
  */
-@property (nonatomic, assign) double playSpeed;
+@property (nonatomic, strong) AVPlayer  * _Nullable avplayer;
+
+/**
+ AVPlayerItem
+ 
+ @since v2.4.1
+ */
+@property (nonatomic, strong) AVPlayerItem * _Nullable avplayerItem;
 
 /**
  提前使用 HppayDNS 解析 URL 中的域名。
@@ -479,7 +517,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 /**
  使用 url 和 option 生成一个 PLPlayer 对象, 直播使用此接口
  
- @param URL    需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
+ @param url    需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
  @param option 播放器初始化选项，传入 nil 值将按照默认选项进行初始化
  
  @return 生成的PLPlayer 对象
@@ -491,7 +529,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 /**
  使用 url 和 option 生成一个 PLPlayer 对象，点播使用此接口
  
- @param URL    需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
+ @param url    需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
  @param option 播放器初始化选项，传入 nil 值将按照默认选项进行初始化
  
  @return 生成的PLPlayer 对象
@@ -503,7 +541,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 /**
  使用 url 和 option 初始化一个 PLPlayer 对象
  
- @param URL    需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
+ @param url    需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
  @param option 播放器初始化选项，传入 nil 值将按照默认选项进行初始化
  
  @return 初始化后的 PLPlayer 对象
@@ -513,6 +551,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
  @since v2.1.0
  */
 - (nullable instancetype)initWithURL:(nullable NSURL *)URL option:(nullable PLPlayerOption *)option;
+
 
 /**
  开始播放
@@ -524,7 +563,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 /**
  开始播放新的 url
  
- @param URL 需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
+ @param url 需要播放的 url ，目前支持 http(s) (url 以 http:// https:// 开头) 与 rtmp (url 以 rtmp:// 开头) 协议。
  
  @since v2.4.1
  */
@@ -581,7 +620,7 @@ typedef void (^ScreenShotWithCompletionHandler)(UIImage * _Nullable image);
 /**
  *  截图
  *  @param handle 类型 ScreenShotWithCompletionHandler block 。
- *
+ *  
  *  @discussion 截图操作为异步，完成后将通过 handle 回调返回 UIImage 类型图片数据。
  *              该功能只支持直播
  *

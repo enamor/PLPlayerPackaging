@@ -28,26 +28,23 @@
 
 @interface PackPlayer : NSObject
 
-@property (nonatomic, assign ,readonly) BOOL isLiving; //是否为直播
+//播放器所在view
+@property (nonatomic, readonly, strong) UIView  *playView;
+
+//是否为直播
+@property (nonatomic, readonly, assign) BOOL    isLiving;
+
 
 @property (nonatomic, weak) id<PackPlayerDelegate> playerDelegate;
-@property (nonatomic, readonly, strong) UIView *playView;
 
+//播放器是否全屏状态
 @property (nonatomic, readonly, assign) BOOL isFullSize;
 
 
 @property (nonatomic, copy) NSString *title;
 
 
-/**
- 是否为直播(直接init的方式创建会自动判断是否为直播)
-
- @param isLiving yes直播、no 非直播
- @return self
- */
-- (instancetype)initWithType:(BOOL)isLiving  onView:(UIView *)view;
-
-- (void)playWithUrl:(NSString *)strUrl;
++ (instancetype)sharedPlayer;
 
 - (void)playWithUrl:(NSString *)strUrl onView:(UIView *)view;
 
@@ -66,10 +63,13 @@
  */
 - (void)stop;
 
+/**
+ *  释放播放器
+ */
 - (void)releasePlayer;
 
 //发送弹幕
-- (void)sendBarrageWithText:(NSString *)text;
+- (void)sendBarrageWithText:(NSString *)text isMine:(BOOL)isMine;
 
 
 /**
@@ -83,7 +83,30 @@
 - (void)becomeMiniScreen;
 
 //用自动布局需要调用此方法
-- (void)initFrame;
+- (void)initPlayerLayer;
 
+
+
+//此方法自动创建单例
++ (void)playWithUrl:(NSString *)strUrl onView:(UIView *)view;
+
++ (void)releasePlayer;
+
+/**
+ *  Player开启视频
+ */
++ (void)play;
+
+/**
+ *  Player暂停视频
+ */
++ (void)pause;
+
+/**
+ *  Player停止播放
+ */
++ (void)stop;
+
++ (void)setTitle:(NSString *)title;
 
 @end

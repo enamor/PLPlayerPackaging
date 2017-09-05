@@ -16,6 +16,8 @@
 		B838E96A1F5557EE00F35F27 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = B838E94B1F5557EE00F35F27 /* main.m */; };
 		B838E9751F5557EE00F35F27 /* SecondViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B838E9621F5557EE00F35F27 /* SecondViewController.m */; };
 		B838E9761F5557EE00F35F27 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B838E9641F5557EE00F35F27 /* ViewController.m */; };
+		B87B6C551F5D6FB000FCBCF4 /* UIView+NI_SuperVC.m in Sources */ = {isa = PBXBuildFile; fileRef = B87B6C541F5D6FB000FCBCF4 /* UIView+NI_SuperVC.m */; };
+		B8AF82071F5D63ED00791FCE /* UIViewController+NI_Autorotate.m in Sources */ = {isa = PBXBuildFile; fileRef = B8AF82061F5D63ED00791FCE /* UIViewController+NI_Autorotate.m */; };
 		B8C94EF71F58078C0048BC94 /* AppDelegate+NI_Extension.m in Sources */ = {isa = PBXBuildFile; fileRef = B8C94ECC1F58078C0048BC94 /* AppDelegate+NI_Extension.m */; };
 		B8C94EF81F58078C0048BC94 /* UINavigationController+NI_allowRote.m in Sources */ = {isa = PBXBuildFile; fileRef = B8C94ECE1F58078C0048BC94 /* UINavigationController+NI_allowRote.m */; };
 		B8C94EF91F58078C0048BC94 /* UITabBarController+NI_allRote.m in Sources */ = {isa = PBXBuildFile; fileRef = B8C94ED01F58078C0048BC94 /* UITabBarController+NI_allRote.m */; };
@@ -52,6 +54,10 @@
 		B838E9621F5557EE00F35F27 /* SecondViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SecondViewController.m; sourceTree = "<group>"; };
 		B838E9631F5557EE00F35F27 /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		B838E9641F5557EE00F35F27 /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		B87B6C531F5D6FB000FCBCF4 /* UIView+NI_SuperVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIView+NI_SuperVC.h"; sourceTree = "<group>"; };
+		B87B6C541F5D6FB000FCBCF4 /* UIView+NI_SuperVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIView+NI_SuperVC.m"; sourceTree = "<group>"; };
+		B8AF82051F5D63ED00791FCE /* UIViewController+NI_Autorotate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIViewController+NI_Autorotate.h"; sourceTree = "<group>"; };
+		B8AF82061F5D63ED00791FCE /* UIViewController+NI_Autorotate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+NI_Autorotate.m"; sourceTree = "<group>"; };
 		B8C578A11F4BCC850060528B /* PLPlayerPackaging.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PLPlayerPackaging.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8C94ECB1F58078C0048BC94 /* AppDelegate+NI_Extension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "AppDelegate+NI_Extension.h"; sourceTree = "<group>"; };
 		B8C94ECC1F58078C0048BC94 /* AppDelegate+NI_Extension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "AppDelegate+NI_Extension.m"; sourceTree = "<group>"; };
@@ -197,6 +203,10 @@
 				B8C94ED01F58078C0048BC94 /* UITabBarController+NI_allRote.m */,
 				B8C94ED11F58078C0048BC94 /* UIView+ni_keyboard.h */,
 				B8C94ED21F58078C0048BC94 /* UIView+ni_keyboard.m */,
+				B8AF82051F5D63ED00791FCE /* UIViewController+NI_Autorotate.h */,
+				B8AF82061F5D63ED00791FCE /* UIViewController+NI_Autorotate.m */,
+				B87B6C531F5D6FB000FCBCF4 /* UIView+NI_SuperVC.h */,
+				B87B6C541F5D6FB000FCBCF4 /* UIView+NI_SuperVC.m */,
 			);
 			path = Category;
 			sourceTree = "<group>";
@@ -374,7 +384,9 @@
 				B8C94EFB1F58078C0048BC94 /* IBCBarrageView.m in Sources */,
 				B8C94F031F58078C0048BC94 /* NIReachability.m in Sources */,
 				B8C94F011F58078C0048BC94 /* HJDanmakuView.m in Sources */,
+				B8AF82071F5D63ED00791FCE /* UIViewController+NI_Autorotate.m in Sources */,
 				B838E9751F5557EE00F35F27 /* SecondViewController.m in Sources */,
+				B87B6C551F5D6FB000FCBCF4 /* UIView+NI_SuperVC.m in Sources */,
 				B8C94EFA1F58078C0048BC94 /* UIView+ni_keyboard.m in Sources */,
 				B8C94F051F58078C0048BC94 /* PackControlScheduler.m in Sources */,
 				B8C94EF91F58078C0048BC94 /* UITabBarController+NI_allRote.m in Sources */,

@@ -17,29 +17,32 @@
 #import "AppDelegate+NI_Extension.h"
 #import "UINavigationController+NI_allowRote.h"
 #import "UITabBarController+NI_allRote.h"
+#import "UIViewController+NI_Autorotate.h"
+#import "UIView+NI_SuperVC.h"
 
 #import "NINetMonitor.h"
 
 @interface PackPlayer ()<PLPlayerDelegate, PackPlayerControlDelegate>
+
+//七牛播放器
 @property (nonatomic, strong) PLPlayer *player;
 @property (nonatomic, strong) PLPlayerOption *option;
 
-@property (nonatomic, strong, readwrite) UIView *playView;
+@property (nonatomic, strong, readwrite)    UIView *playView;
+@property (nonatomic, weak)                 UIView *superPlayerView;
 
 //控制层
-@property (nonatomic, strong) PackControlScheduler *playerControl; //小屏控制层
+@property (nonatomic, strong) PackControlScheduler *playerControl;
 
 //弹幕
-@property (nonatomic, strong)IBCBarrageView *barrageView;
+@property (nonatomic, strong) IBCBarrageView *barrageView;
 
 @property (nonatomic, strong) NSURL *url;
 
+//是否为直播 (rtmp flv格式)
 @property (nonatomic, assign ,readwrite) BOOL isLiving;
 
-@property (nonatomic, weak) UIView *superPlayerView;
 @property (nonatomic, assign) UIStatusBarStyle      barStyle;          //之前StatusBar样式
-
-
 
 @property (nonatomic, assign) BOOL                  isCanPlay;         //视频是否可以播放
 @property (nonatomic, assign) BOOL                  isLock;            //锁定(旋转、手势)
@@ -50,8 +53,8 @@
 @property (nonatomic, assign) BOOL beforeBackIsPlay;//记录进入后台前播放状态
 @property (nonatomic, assign) BOOL isClosedBarrage;   //是否开启弹幕
 
-@property(nonatomic,strong) NSTimer *timer;
 
+@property(nonatomic,strong) NSTimer *timer;
 
 @property(nonatomic,strong) NSTimer *loadingTimer;  //监听播放器状态 七牛播放器状态返回不对
 
@@ -63,46 +66,40 @@
 
 @implementation PackPlayer
 
-- (instancetype)initWithType:(BOOL)isLiving onView:(UIView *)view{
-    self = [super init];
-    if (self) {
-        _isLiving = isLiving;
-        _superPlayerView = view;
++ (instancetype)sharedPlayer {
     
-        self.playView = [[UIView alloc] init];
-        self.playView.backgroundColor = [UIColor blackColor];
-        self.barStyle = APP.statusBarStyle;
+    static PackPlayer *_sharedClient = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _sharedClient = [[PackPlayer alloc] init];
         
-        [self p_initPlayerUI];
-        
-        
-        
-    }
-    return self;
+    });
+    
+    return _sharedClient;
+    
 }
-- (instancetype)init
-{
+- (instancetype)init {
     self = [super init];
     if (self) {
         
         self.playView = [[UIView alloc] init];
+        self.fullView = [[UIView alloc] init];
         self.playView.backgroundColor = [UIColor blackColor];
+        self.fullView.backgroundColor = [UIColor blackColor];
         self.barStyle = APP.statusBarStyle;
+        
+        [self p_initAVAudioSession];
         
     }
     return self;
 }
 
 - (void)dealloc {
-    
-    [self.playView removeFromSuperview];
-    [self.superPlayerView removeFromSuperview];
-    self.player = nil;
-    
     NSLog(@"%s",__func__);
 }
 
 - (void)releasePlayer {
+    if (!_player) return;
     [self endProcess];
     [self endLoadingTimer];
     
@@ -111,97 +108,50 @@
     self.player = nil;
     
     [self.playView removeFromSuperview];
-    [_playerControl removeFromSuperview];
+    [self.playerControl removeFromSuperview];
     self.playerControl = nil;
+    
+    APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
+    [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:UIDeviceOrientationPortrait] forKey:@"orientation"];
+    APP.statusBarStyle = _barStyle;
+    APP.statusBarHidden = NO;
     
     [self p_removeObserver];
 }
+
 
 - (void)playWithUrl:(NSString *)strUrl onView:(UIView *)view{
     _superPlayerView = view;
-    [self playWithUrl:strUrl];
-}
-
-- (void)playWithUrl:(NSString *)strUrl {
-    if (!strUrl) NSAssert(1<0, @"视频URL为空");
-#warning 需要处理中文路径过会再处理
-    if ([strUrl hasPrefix:@"http://"] || [strUrl hasPrefix:@"https://"]) {
-        _url = [NSURL URLWithString:strUrl];
-    }else if ([strUrl hasPrefix:@"rtmp"] || [strUrl hasPrefix:@"flv"]){
-        _url = [NSURL URLWithString:strUrl];
-        _isLiving = YES;
-    }else { //本地视频 需要完整路径
-        _url = [NSURL fileURLWithPath:strUrl];
-    }
-    
-    [self rePlay];
-}
-
-
-- (void)p_initPlayerUI {
-    [_superPlayerView addSubview:self.playView];
-    self.playView.frame = _superPlayerView.bounds;
-    
-    [self.playView addSubview:self.playerControl];
-    _playerControl.frame = _playView.bounds;
-    _playerControl.controlDelegate = self;
-    _playerControl.outerDelegate = self.playerDelegate;
-    
-    [UIApplication sharedApplication].idleTimerDisabled = YES;
-    
-#warning 待七牛播放器问题修复后再解决
-//    [self p_initNetworkStatusObserver];
-}
-
-- (void)setPlayerDelegate:(id<PackPlayerDelegate>)playerDelegate {
-    _playerDelegate = playerDelegate;
-    _playerControl.outerDelegate = self.playerDelegate;
-}
-
-
-- (void)rePlay {
-    [self p_removeObserver];
-    [self.playerControl errorBtnDismiss];
-    
     if (_player) {
-        [self endProcess];
-        [self.player stop];
-        [_player.playerView removeFromSuperview];
-        self.player = nil;
+        [self releasePlayer];
     }
-    [self plPlayerPlay];
+    [self p_playWithUrl:strUrl];
 }
 
-- (void)plPlayerPlay {
-    // 初始化 PLPlayer
-    self.player = [PLPlayer playerWithURL:_url option:self.option];
-    
-    // 设定代理 (optional)
-    self.player.delegate = self;
-    [self.playView insertSubview:_player.playerView atIndex:0];
-    _player.playerView.frame = _playView.bounds;
-    [self play];
-    
-    [self p_initNotificatObserver];
++ (void)playWithUrl:(NSString *)strUrl onView:(UIView *)view {
+    PackPlayer *player = [PackPlayer sharedPlayer];
+    [player playWithUrl:strUrl onView:view];
 }
 
-- (void)initFrame {
+
+
+
+- (void)initPlayerLayer {
     if (!_isFullScreen) {
         self.playView.frame = _superPlayerView.bounds;
         _player.playerView.frame = _playView.bounds;
         
         _playerControl.frame = _playView.bounds;
     }
-    
 }
 
+#pragma mark - Public
 - (void)play {
     [self.player play];
     
     if (!_isLiving) {
         [self startProcess];
     }
-    
 }
 
 - (void)pause {
@@ -210,7 +160,6 @@
     if (!_isLiving) {
         [self endProcess];
     }
-    
 }
 
 - (void)stop {
@@ -219,139 +168,43 @@
     if (!_isLiving) {
         [self endProcess];
     }
-    
 }
 
-- (void)p_initNotificatObserver {
-    //监听屏幕方向
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initScreenOrientationChanged:) name:UIDeviceOrientationDidChangeNotification object:nil];
-    //监听系统音量
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initAudioVolumeObserver:) name:@"AVSystemController_SystemVolumeDidChangeNotification" object:nil];
-    // 监听耳机插入和拔掉通知
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initaudioRouteChangeObserver:) name:AVAudioSessionRouteChangeNotification object:nil];
-    
-    //进入前台
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
-    //进入后他
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationWillResignActive) name:UIApplicationWillResignActiveNotification object:nil ];
-    
+- (void)becomeFullScreen {
+    [self fullScreen:UIDeviceOrientationLandscapeLeft];
 }
-
-- (void)p_initNetworkStatusObserver {
-    
-    __weak typeof(self) weakSelf = self;
-    [NINetMonitor startMonitorWithCallBack:^(NINetworkStatus networkStatus) {
-        switch (networkStatus) {
-            case NotReachable:
-                
-                [weakSelf pause];
-                [weakSelf.playerControl playErrorStatus:PlayerErrorStatusNotReachable];
-                break;
-            case ReachableViaWiFi:{
-                [weakSelf rePlay];
-            }
-    
-                break;
-            case ReachableViaWWAN:{
-                [weakSelf.player stop];
-                [weakSelf.playerControl playErrorStatus:PlayerErrorStatusNetViaWWAN];
-            }
-
-                break;
-                
-            default:
-                break;
-        }
-    }];
-}
-
-- (void)p_initDeviceOrientationObserver {
-    //监听屏幕方向
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initScreenOrientationChanged:) name:UIDeviceOrientationDidChangeNotification object:nil];
-}
-- (void)p_removeDeviceOrientationObserver {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
-}
-- (void)p_removeObserver {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-#pragma mark 监听屏幕旋转
-- (void)p_initScreenOrientationChanged:(id)notification {
-    UIDeviceOrientation orientation = [UIDevice currentDevice].orientation;
-    [self fullScreen:orientation];
-}
-
-//监听系统音量改变
-- (void)p_initAudioVolumeObserver:(id)notification {
-//    float volume = [[[notification userInfo] objectForKey:@"AVSystemController_AudioVolumeNotificationParameter"] floatValue];
-//    self.volumeSlider.value = volume;
-    
-}
-
-//耳机插入拔出
-- (void)p_initaudioRouteChangeObserver:(id)notification {
-    NSDictionary *interuptionDict = [notification userInfo];
-    NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
-    
-    switch (routeChangeReason) {
-            
-        case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
-            // 耳机插入
-            break;
-        case AVAudioSessionRouteChangeReasonOldDeviceUnavailable: {
-            // 耳机拔掉
-            if (_isLiving) {
-                [self play];
-            } else {
-                [self pause];
-            }
-            
-            break;
-        }
-        case AVAudioSessionRouteChangeReasonCategoryChange:
-            // called at start - also when other audio wants to play
-            NSLog(@"AVAudioSessionRouteChangeReasonCategoryChange");
-            break;
-    }
-}
-
-//前台
-- (void)p_applicationDidBecomeActive {
-    if (_beforeBackIsPlay) {
-        [self play];
-    }
-    
-    [self p_initDeviceOrientationObserver];
-    if (_isFullScreen) {
-        if ([APP_DELEGATE respondsToSelector:@selector(setAllowRotationType:)]) {
-            APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
-        }
-    }
+- (void)becomeMiniScreen {
+    [self fullScreen:UIDeviceOrientationPortrait];
 }
 
 
-//即将进入后台
-- (void)p_applicationWillResignActive {
-    _beforeBackIsPlay = self.player.isPlaying;
-    [self pause];
-    
-    [self p_removeDeviceOrientationObserver];
-    if (_isFullScreen) {
-        if ([APP_DELEGATE respondsToSelector:@selector(setAllowRotationType:)]) {
-            APP_DELEGATE.allowRotationType = AllowRotationMaskLandscapeLeftOrRight;
-        }
-        
-    }
++ (void)releasePlayer {
+    [[PackPlayer sharedPlayer] releasePlayer];
+}
+
++ (void)play {
+    [[PackPlayer sharedPlayer] play];
+}
+
++ (void)pause {
+    [[PackPlayer sharedPlayer] pause];
+}
+
++ (void)stop {
+    [[PackPlayer sharedPlayer] stop];
+}
+
++ (void)setTitle:(NSString *)title {
+    [PackPlayer sharedPlayer].title = title;
 }
 
 
 
-
-
-// 实现 <PLPlayerDelegate> 来控制流状态的变更
+/** --------------------七牛播放器代理 begin ------------ */
+#pragma mark PLPlayerDelegate
 - (void)player:(nonnull PLPlayer *)player statusDidChange:(PLPlayerStatus)state {
-    
+    [self.playerControl errorBtnDismiss];
+
     if (PLPlayerStatusCaching == state) {
         [self.playerControl startLoading];
         [self startLoadingTimer];
@@ -421,6 +274,7 @@
         [self.playerControl playErrorStatus:PlayerErrorStatusNotReachable];
     } else {
         [self.playerControl playErrorStatus:PlayerErrorStatusError];
+        
     }
     
 }
@@ -444,37 +298,29 @@
     }
 
 }
-
-
-- (PLPlayerOption *)option {
-    if (!_option) {
-        _option = [PLPlayerOption defaultOption];
-        // 更改需要修改的 option 属性键所对应的值
-        [_option setOptionValue:@15 forKey:PLPlayerOptionKeyTimeoutIntervalForMediaPackets];
-        [_option setOptionValue:@2000 forKey:PLPlayerOptionKeyMaxL1BufferDuration];
-        [_option setOptionValue:@1000 forKey:PLPlayerOptionKeyMaxL2BufferDuration];
-        [_option setOptionValue:@(NO) forKey:PLPlayerOptionKeyVideoToolbox];
-        [_option setOptionValue:@(kPLLogInfo) forKey:PLPlayerOptionKeyLogLevel];
-        
-    }
-    return _option;
-}
+/** --------------------七牛播放器代理 end ------------ */
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-#pragma mark ------ Protocol
+
+/** ----------------- PackPlayerControlDelegate ----------------- */
+#pragma mark ------ PackPlayerControlDelegate
 - (void)playerControl:(UIView *)control backAction:(UIButton *)sender {
     if (_isFullScreen) {
         _isLock = NO;
         [self fullScreen:UIDeviceOrientationPortrait];
         
     } else {
-        if (_playerDelegate) {
-            if ([_playerDelegate respondsToSelector:@selector(playerBackBtnAction)]) {
-                [_playerDelegate playerBackBtnAction];
+        if (_isLiving) {
+            if (_playerDelegate) {
+                if ([_playerDelegate respondsToSelector:@selector(playerBackBtnAction)]) {
+                    [_playerDelegate playerBackBtnAction];
+                }
             }
+        } else {
+            [self releasePlayer];
         }
+        
     }
 }
 
@@ -487,19 +333,20 @@
 }
 
 - (void)playerControl:(UIView *)control errorAction:(PlayerErrorStatus)status {
+    [self.playerControl errorBtnDismiss];
     switch (status) {
         case PlayerErrorStatusError:{
-            [self rePlay];
+            [self p_restartPlayer];
         }
             
             break;
         case PlayerErrorStatusNetViaWWAN:{
-            [self rePlay];
+            [self p_restartPlayer];
         }
             
             break;
         case PlayerErrorStatusNotReachable:
-            
+            [self p_restartPlayer];
             break;
             
         default:
@@ -514,11 +361,6 @@
         
     }else {
         [self fullScreen:UIDeviceOrientationLandscapeLeft];
-//        if (!sender.selected) {
-//            
-//        } else {
-//            [self fullScreen:UIDeviceOrientationPortrait];
-//        }
     }
 
 }
@@ -549,44 +391,31 @@
     double totalTime = CMTimeGetSeconds(self.player.totalDuration);
     [self.playerControl playTo:time totalTime:totalTime];
     self.isSeeking = YES;
-    //    if (!_isFullScreen) {
-    //        [self.playerControl playTo:seekTime totalTime:totalTime];
-    //    } else {
-    //        __weak typeof(self) weakSelf = self;
-    //        [self.playerControl seekPipTo:sender.value * self.avPlayer.totalTime totalTime:self.avPlayer.totalTime];
-    //        [self.avPlayer getCImage:sender.value * self.avPlayer.totalTime block:^(UIImage *image) {
-    //            [weakSelf.playerControl seekToImage:image];
-    //        }];
-    //        [self.avPlayer startToSeek];
-    //    }
 }
+/** ----------------- PackPlayerControlDelegate ----------------- */
 
 
 
-#pragma mark - Public
-/**
- 进入全屏
- */
-- (void)becomeFullScreen {
-     [self fullScreen:UIDeviceOrientationLandscapeLeft];
-}
-- (void)becomeMiniScreen {
-    [self fullScreen:UIDeviceOrientationPortrait];
-}
-
-
+/** ---------------- 屏幕旋转 ---------------------------------------*/
 - (void)fullScreen:(UIDeviceOrientation)orientation {
     if (![self judgeIfCanRotate:orientation]) return;
     
+    if ([_playerDelegate respondsToSelector:@selector(screenOrientationWillChange)]) {
+        [_playerDelegate screenOrientationWillChange];
+    }
     CGAffineTransform tranform = [self getRotateTransform:orientation];
     _currentOrientiation = orientation;
     
     if (orientation == UIDeviceOrientationLandscapeLeft
         ||orientation ==UIDeviceOrientationLandscapeRight ) { //全屏
         [self.playView removeFromSuperview];
-        
         APP_DELEGATE.allowRotationType = AllowRotationMaskLandscapeLeftOrRight;
+        [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:UIDeviceOrientationUnknown] forKey:@"orientation"];
+        [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:orientation] forKey:@"orientation"];
         
+        UIView *superVCView  =_superPlayerView.viewController.view;
+        [_superPlayerView.viewController.view addSubview:self.fullView];
+        self.fullView.frame = superVCView.bounds;
         [[UIApplication sharedApplication].keyWindow addSubview:self.playView];
         
         CGFloat width = MAX(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -602,7 +431,6 @@
             
         }completion:^(BOOL finished) {
             _playerControl.hidden = NO;
-            [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:orientation] forKey:@"orientation"];
         }];
         
         APP.statusBarOrientation = (UIInterfaceOrientation)orientation;
@@ -614,9 +442,14 @@
         //        [self p_addPanRecognizer];
         
     } else if (orientation == UIDeviceOrientationPortrait) { //小屏幕
-        [self.playView removeFromSuperview];
+        //如果全屏键盘 消失
+        [_playerControl dismissKeyboard];
         
+        [self.fullView removeFromSuperview];
+        [self.playView removeFromSuperview];
         APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
+        [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:UIDeviceOrientationUnknown] forKey:@"orientation"];
+        [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:orientation] forKey:@"orientation"];
         //移除亮度控制
         [self.superPlayerView addSubview:self.playView];
         _playerControl.hidden = YES;
@@ -625,7 +458,6 @@
             [self resetFrame:_superPlayerView.bounds];
         }completion:^(BOOL finished) {
             _playerControl.hidden = NO;
-            [[UIDevice currentDevice] setValue:[NSNumber numberWithInteger:orientation] forKey:@"orientation"];
         }];
         
         APP.statusBarOrientation = UIInterfaceOrientationPortrait;
@@ -637,57 +469,6 @@
         //        [self p_removePanRecognizer];
     }
 }
-
-- (void)resetFrame:(CGRect)frame {
-    self.playView.frame = frame;
-    self.playerControl.frame = _playView.bounds;
-    _player.playerView.frame = _playView.bounds;
-
-}
-
-- (void)setTitle:(NSString *)title {
-    _title = title;
-    self.playerControl.title = title;
-}
-
-- (void)setIsFullScreen:(BOOL)isFullScreen {
-    _isFullScreen = isFullScreen;
-    [self.playerControl setFullSize:_isFullScreen];
-    
-    
-    if (_isFullScreen && !_isClosedBarrage) {
-        [self showBarrageView];
-
-    }else {
-        [self.barrageView clearScreen];
-        [self.barrageView removeFromSuperview];
-    }
-    
-}
-
-//弹幕
-- (void)playerBarrageAction:(UIButton *)sender {
-    _isClosedBarrage = sender.selected;
-    if (_isFullScreen && !_isClosedBarrage) {
-        [self showBarrageView];
-
-    } else {
-        [self.barrageView removeFromSuperview];
-    }
-}
-
-- (void)sendBarrageWithText:(NSString *)text {
-    if (_isFullScreen && !_isClosedBarrage) {
-        [self.barrageView sendBarrage:text];
-    }
-}
-
-- (void)showBarrageView {
-    [self.playView addSubview:self.barrageView];
-    self.barrageView.frame = CGRectMake(0, _playerControl.frame.origin.y + 49, _playerControl.frame.size.width,_playerControl.frame.size.height - 49 );
-    self.barrageView.userInteractionEnabled = NO;
-}
-
 
 //判断是否可以旋转
 - (BOOL)judgeIfCanRotate:(UIDeviceOrientation)orientation {
@@ -716,7 +497,44 @@
     return tranform;
 }
 
+- (void)resetFrame:(CGRect)frame {
+    self.playView.frame = frame;
+    self.playerControl.frame = _playView.bounds;
+    _player.playerView.frame = _playView.bounds;
+}
+/** ---------------- 屏幕旋转 ---------------------------------------*/
 
+
+
+/** ------------------- 弹幕 -----------------------------*/
+- (void)playerBarrageAction:(UIButton *)sender {
+    _isClosedBarrage = sender.selected;
+    if (_isFullScreen && !_isClosedBarrage) {
+        [self showBarrageView];
+
+    } else {
+        [self.barrageView removeFromSuperview];
+    }
+}
+
+- (void)showBarrageView {
+    [self.playView addSubview:self.barrageView];
+    self.barrageView.frame = CGRectMake(0, _playerControl.frame.origin.y + 49, _playerControl.frame.size.width,_playerControl.frame.size.height - 49 );
+    self.barrageView.userInteractionEnabled = NO;
+}
+
+#pragma mark 发送弹幕
+- (void)sendBarrageWithText:(NSString *)text isMine:(BOOL)isMine{
+    if (_isFullScreen && !_isClosedBarrage) {
+        [self.barrageView sendBarrage:text isSelf:isMine];
+    }
+}
+/** ------------------- 弹幕 -----------------------------*/
+
+
+
+
+/** --------------- 播放进度的timer ----------------- */
 - (void)startProcess {
     if (_isLiving) return;
     if (!_timer) {
@@ -724,18 +542,37 @@
     }
 }
 
-- (void)startLoadingTimer {
-    if (!_loadingTimer) {
-        _loadingTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(loadingObserver) userInfo:nil repeats:YES];
-    }
-}
-
-
 - (void) endProcess {
     if (_isLiving) return;
     if (_timer) {
         [_timer invalidate];
         self.timer  = nil;
+    }
+}
+- (void)timerFunction:(NSTimer *) timer {
+    if (self.player.playing  && !_isSeeking) {
+        
+        double currentTime = CMTimeGetSeconds(self.player.currentTime);
+        double totalTime = CMTimeGetSeconds(self.player.totalDuration);
+        [_playerControl playTo:currentTime totalTime:totalTime];
+    }
+}
+ 
+/** --------------- 播放进度的timer ----------------- */
+
+
+
+
+/** --------------- 七牛播放器状态返回不对 定时处理加载动画 ----------------- */
+- (void)startLoadingTimer {
+    if (!_loadingTimer) {
+        _loadingTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(loadingObserver) userInfo:nil repeats:YES];
+    }
+}
+- (void)endLoadingTimer {
+    if (_loadingTimer) {
+        [_loadingTimer invalidate];
+        self.loadingTimer  = nil;
     }
 }
 
@@ -745,22 +582,235 @@
     }
     [self endLoadingTimer];
 }
+/** --------------- 七牛播放器状态返回不对 定时处理加载动画 ----------------- */
 
-- (void)endLoadingTimer {
-    if (_loadingTimer) {
-        [_loadingTimer invalidate];
-        self.loadingTimer  = nil;
+
+
+/**
+ 静音模式下开启app播放
+ */
+- (void)p_initAVAudioSession {
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    [audioSession setCategory:AVAudioSessionCategoryPlayback  error:nil];
+}
+
+- (void)p_initPlayerUI {
+    [_superPlayerView addSubview:self.playView];
+    self.playView.frame = _superPlayerView.bounds;
+    
+    [self.playView addSubview:self.playerControl];
+    _playerControl.frame = _playView.bounds;
+    _playerControl.controlDelegate = self;
+    _playerControl.outerDelegate = self.playerDelegate;
+    
+    [UIApplication sharedApplication].idleTimerDisabled = YES;
+    
+#warning 待七牛播放器问题修复后再解决
+    [self p_initNetworkStatusObserver];
+}
+
+
+- (void)p_playWithUrl:(NSString *)strUrl {
+    if (!strUrl) NSAssert(1<0, @"视频URL为空");
+#warning 需要处理中文路径过会再处理
+    if ([strUrl hasPrefix:@"http://"] || [strUrl hasPrefix:@"https://"]) {
+        _url = [NSURL URLWithString:strUrl];
+        _isLiving = NO;
+    }else if ([strUrl hasPrefix:@"rtmp"] || [strUrl hasPrefix:@"flv"]){
+        _url = [NSURL URLWithString:strUrl];
+        _isLiving = YES;
+    }else { //本地视频 需要完整路径
+        _url = [NSURL fileURLWithPath:strUrl];
+    }
+    
+    [self p_initPlayerUI];
+    [self p_initPlayerAndPlay];
+}
+
+//内部重新播放
+- (void)p_restartPlayer {
+    [self p_removeObserver];
+    [self.playerControl errorBtnDismiss];
+    
+    if (_player) {
+        [self endProcess];
+        [self.player stop];
+        [_player.playerView removeFromSuperview];
+        self.player = nil;
+    }
+    [self p_initPlayerAndPlay];
+}
+
+//初始化播放器
+- (void)p_initPlayerAndPlay {
+    // 初始化 PLPlayer
+    self.player = [PLPlayer playerWithURL:_url option:self.option];
+    self.player.delegate = self;
+    [self.playView insertSubview:_player.playerView atIndex:0];
+    _player.playerView.frame = _playView.bounds;
+    
+    /**
+     * 七牛2.4.3 及以下版本 经常播放失败（需要以下处理）
+     
+     if([[UIDevice currentDevice] systemVersion].intValue>=10){
+     // 增加下面这行可以解决iOS10兼容性问题了
+     self.player.avplayer.automaticallyWaitsToMinimizeStalling = NO;
+     }
+     */
+
+    //播放
+    [self play];
+    
+    //监听
+    [self p_initNotificatObserver];
+}
+
+
+
+/** ------------------- 监听的处理 begin ----------------- */
+//通知监听
+- (void)p_initNotificatObserver {
+    //监听屏幕方向
+    [self p_initDeviceOrientationObserver];
+    //监听系统音量
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initAudioVolumeObserver:) name:@"AVSystemController_SystemVolumeDidChangeNotification" object:nil];
+    // 监听耳机插入和拔掉通知
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initaudioRouteChangeObserver:) name:AVAudioSessionRouteChangeNotification object:nil];
+    
+    //进入前台
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
+    //进入后他
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationWillResignActive) name:UIApplicationWillResignActiveNotification object:nil ];
+    
+}
+
+//监听网络状态
+- (void)p_initNetworkStatusObserver {
+    
+    __weak typeof(self) weakSelf = self;
+    [NINetMonitor startMonitorWithCallBack:^(NINetworkStatus networkStatus) {
+        //        switch (networkStatus) {
+        //            case NotReachable:
+        //
+        //                [weakSelf pause];
+        //                [weakSelf.playerControl playErrorStatus:PlayerErrorStatusNotReachable];
+        //                break;
+        //            case ReachableViaWiFi:{
+        //                [weakSelf rePlay];
+        //            }
+        //
+        //                break;
+        //            case ReachableViaWWAN:{
+        //                [weakSelf.player stop];
+        //                [weakSelf.playerControl playErrorStatus:PlayerErrorStatusNetViaWWAN];
+        //            }
+        //
+        //                break;
+        //
+        //            default:
+        //                break;
+        //        }
+    }];
+}
+
+//监听屏幕方向
+- (void)p_initDeviceOrientationObserver {
+    //监听屏幕方向
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_initScreenOrientationChanged:) name:UIDeviceOrientationDidChangeNotification object:nil];
+}
+- (void)p_removeDeviceOrientationObserver {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
+}
+- (void)p_removeObserver {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+#pragma mark 监听屏幕旋转
+- (void)p_initScreenOrientationChanged:(id)notification {
+    UIDeviceOrientation orientation = [UIDevice currentDevice].orientation;
+    [self fullScreen:orientation];
+}
+
+//监听系统音量改变
+- (void)p_initAudioVolumeObserver:(id)notification {
+    //    float volume = [[[notification userInfo] objectForKey:@"AVSystemController_AudioVolumeNotificationParameter"] floatValue];
+    //    self.volumeSlider.value = volume;
+    
+}
+
+//耳机插入拔出
+- (void)p_initaudioRouteChangeObserver:(id)notification {
+    NSDictionary *interuptionDict = [notification userInfo];
+    NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
+    
+    switch (routeChangeReason) {
+            
+        case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
+            // 耳机插入
+            break;
+        case AVAudioSessionRouteChangeReasonOldDeviceUnavailable: {
+            // 耳机拔掉
+            if (_isLiving) {
+                [self play];
+            } else {
+                [self pause];
+            }
+            
+            break;
+        }
+        case AVAudioSessionRouteChangeReasonCategoryChange:
+            // called at start - also when other audio wants to play
+            NSLog(@"AVAudioSessionRouteChangeReasonCategoryChange");
+            break;
+    }
+}
+
+//前台
+- (void)p_applicationDidBecomeActive {
+    if (_beforeBackIsPlay) {
+        [self play];
+    }
+    
+    [self p_initDeviceOrientationObserver];
+    if (_isFullScreen) {
+        if ([APP_DELEGATE respondsToSelector:@selector(setAllowRotationType:)]) {
+            APP_DELEGATE.allowRotationType = AllowRotationMaskPortrait;
+        }
     }
 }
 
 
-- (void)timerFunction:(NSTimer *) timer {
-    if (self.player.playing  && !_isSeeking) {
-
-        double currentTime = CMTimeGetSeconds(self.player.currentTime);
-        double totalTime = CMTimeGetSeconds(self.player.totalDuration);
-        [_playerControl playTo:currentTime totalTime:totalTime];
+//即将进入后台
+- (void)p_applicationWillResignActive {
+    _beforeBackIsPlay = self.player.isPlaying;
+    [self pause];
+    
+    [self p_removeDeviceOrientationObserver];
+    if (_isFullScreen) {
+        if ([APP_DELEGATE respondsToSelector:@selector(setAllowRotationType:)]) {
+            APP_DELEGATE.allowRotationType = AllowRotationMaskLandscapeLeftOrRight;
+        }
+        
     }
+}
+/** ------------------- 监听的处理 end ----------------- */
+
+
+
+
+#pragma mark ------ getter setter
+- (PLPlayerOption *)option {
+    if (!_option) {
+        _option = [PLPlayerOption defaultOption];
+        // 更改需要修改的 option 属性键所对应的值
+        [_option setOptionValue:@15 forKey:PLPlayerOptionKeyTimeoutIntervalForMediaPackets];
+        [_option setOptionValue:@2000 forKey:PLPlayerOptionKeyMaxL1BufferDuration];
+        [_option setOptionValue:@1000 forKey:PLPlayerOptionKeyMaxL2BufferDuration];
+        [_option setOptionValue:@(NO) forKey:PLPlayerOptionKeyVideoToolbox];
+        [_option setOptionValue:@(kPLLogInfo) forKey:PLPlayerOptionKeyLogLevel];
+        
+    }
+    return _option;
 }
 
 - (PackControlScheduler *)playerControl {
@@ -781,5 +831,26 @@
     return _isFullScreen;
 }
 
+- (void)setTitle:(NSString *)title {
+    _title = title;
+    self.playerControl.title = title;
+}
+
+- (void)setPlayerDelegate:(id<PackPlayerDelegate>)playerDelegate {
+    _playerDelegate = playerDelegate;
+    _playerControl.outerDelegate = self.playerDelegate;
+}
+
+- (void)setIsFullScreen:(BOOL)isFullScreen {
+    _isFullScreen = isFullScreen;
+    [self.playerControl setFullSize:_isFullScreen];
+    
+    if (_isFullScreen && !_isClosedBarrage) {
+        [self showBarrageView];
+    }else {
+        [self.barrageView clearScreen];
+        [self.barrageView removeFromSuperview];
+    }
+}
 
 @end

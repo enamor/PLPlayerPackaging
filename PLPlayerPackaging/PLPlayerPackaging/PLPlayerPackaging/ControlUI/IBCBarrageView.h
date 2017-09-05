@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @interface IBCBarrageView : UIView
-- (void)sendBarrage:(NSString *)text;
+- (void)sendBarrage:(NSString *)text  isSelf:(BOOL)isSelf;
 
 - (void)clearScreen;
 @end

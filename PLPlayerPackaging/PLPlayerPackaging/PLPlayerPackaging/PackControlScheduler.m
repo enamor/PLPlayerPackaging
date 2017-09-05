@@ -98,6 +98,11 @@
     [_fullControl errorBtnDismiss];
 }
 
+- (void)dismissKeyboard {
+    [_miniControl dismissKeyboard];
+    [_fullControl dismissKeyboard];
+}
+
 - (void)playErrorStatus:(PlayerErrorStatus)status {
     [_miniControl playErrorStatus:status];
     [_fullControl playErrorStatus:status];

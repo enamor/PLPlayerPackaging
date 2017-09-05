@@ -34,17 +34,16 @@
     self.danmakuView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self addSubview:self.danmakuView];
 
-    
 }
 
-- (void)sendBarrage:(NSString *)text {
+- (void)sendBarrage:(NSString *)text isSelf:(BOOL)isSelf{
     if (!self.danmakuView.isPrepared) {
         [self.danmakuView prepareDanmakus:nil];
     }
     
     HJDanmakuType type = HJDanmakuTypeLR;
     DemoDanmakuModel *danmakuModel = [[DemoDanmakuModel alloc] initWithType:type];
-    danmakuModel.selfFlag = NO;
+    danmakuModel.selfFlag = isSelf;
     danmakuModel.text = text;
     danmakuModel.textFont = [UIFont systemFontOfSize:15];
     danmakuModel.textColor = [UIColor whiteColor];
@@ -79,8 +78,8 @@
 //    cell.alpha = 0.5;
     if (model.selfFlag) {
         cell.zIndex = 30;
-        cell.layer.borderWidth = 0.5;
-        cell.layer.borderColor = [UIColor redColor].CGColor;
+        cell.layer.borderWidth = 1;
+        cell.layer.borderColor = [UIColor whiteColor].CGColor;
     }
     cell.textLabel.font = model.textFont;
     cell.textLabel.textColor = model.textColor;

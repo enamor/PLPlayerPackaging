@@ -54,6 +54,9 @@
 
 @property (nonatomic, strong) NSTimer *timer;
 
+@property (nonatomic, assign) BOOL isLiving;
+
+
 
 @property (nonatomic, strong) PlayerFullChatView *chatView;
 
@@ -81,7 +84,6 @@
 
 - (void)setFullSize:(BOOL)fullSize {
     _fullSize = fullSize;
-    _fullBtn.selected = _fullSize;
     
     [_chatView removeFromSuperview];
     
@@ -106,11 +108,11 @@
         case PlayerControlTypeNormalMini:{
             [self.backBtn setImage:BUNDLE_IMAGE(@"player_button_close") forState:UIControlStateNormal];
             
-            [self.playBtn setImage:BUNDLE_IMAGE(@"miniplayer_bottom_play") forState:UIControlStateNormal];
-            [self.playBtn setImage:BUNDLE_IMAGE(@"miniplayer_bottom_pause") forState:UIControlStateSelected];
+            [self.playBtn setImage:BUNDLE_IMAGE(@"miniplayer_black_play") forState:UIControlStateNormal];
+            [self.playBtn setImage:BUNDLE_IMAGE(@"miniplayer_black_pause") forState:UIControlStateSelected];
             
             [self.fullBtn setImage:BUNDLE_IMAGE(@"miniplayer_icon_fullsize") forState:UIControlStateNormal];
-            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateSelected];
+//            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateSelected];
             
             [self p_setProgress];
         }
@@ -122,24 +124,25 @@
             [self.playBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_play") forState:UIControlStateNormal];
             [self.playBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_pause") forState:UIControlStateSelected];
             
-            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateNormal];
-            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateSelected];
+            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_white_smallSize") forState:UIControlStateNormal];
+//            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_white_smallSize") forState:UIControlStateSelected];
             
             [self p_setProgress];
         }
             
             break;
         case PlayerControlTypeLivingMini:{
+            _isLiving = YES;
             [self.backBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_back") forState:UIControlStateNormal];
             
             self.bottomBgImageView.image = nil;
-//            [self.shareBtn setImage:BUNDLE_IMAGE(@"miniplayer_share") forState:UIControlStateNormal];
-//            
-//            [self.fullBtn setImage:BUNDLE_IMAGE(@"miniplayer_icon_fullsize") forState:UIControlStateNormal];
+            [self.shareBtn setImage:BUNDLE_IMAGE(@"miniplayer_share") forState:UIControlStateNormal];
+            [self.fullBtn setImage:BUNDLE_IMAGE(@"miniplayer_icon_fullsize") forState:UIControlStateNormal];
 //            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateSelected];
         }
             break;
         case PlayerControlTypeLivingFull:{
+            _isLiving = YES;
             [self.backBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_back") forState:UIControlStateNormal];
             
             [self.chatBtn setImage:BUNDLE_IMAGE(@"fullplayer_chat") forState:UIControlStateNormal];
@@ -150,8 +153,9 @@
             
             [self.shareBtn setImage:BUNDLE_IMAGE(@"fullplayer_share") forState:UIControlStateNormal];
             
-            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateSelected];
+            [self.fullBtn setImage:BUNDLE_IMAGE(@"fullplayer_icon_smallSize") forState:UIControlStateNormal];
             
+            self.titleLabel.font = [UIFont boldSystemFontOfSize:18];
             self.bottomBgImageView.image = nil;
         }
             
@@ -192,15 +196,18 @@
 }
 
 - (void)p_setProgress {
-    [self.progressSlider setThumbImage:BUNDLE_IMAGE(@"fullplayer_progress_point") forState:UIControlStateNormal];
-    self.progressSlider.minimumTrackTintColor = HEX_COLOR(0xF1B795);
-    self.progressSlider.maximumTrackTintColor = [UIColor blackColor];
-    self.progressSlider.cacheTrackTintColor = [UIColor lightGrayColor];
-
+    if (_progressSlider) {
+        [self.progressSlider setThumbImage:BUNDLE_IMAGE(@"player_progress_point_blue") forState:UIControlStateNormal];
+        self.progressSlider.minimumTrackTintColor = HEX_COLOR(0x4d92ff);
+        self.progressSlider.maximumTrackTintColor = [UIColor blackColor];
+        self.progressSlider.cacheTrackTintColor = [UIColor lightGrayColor];
+        
+        
+        [self.progressSlider addTarget:self action:@selector(sliderValueChangedAction:) forControlEvents:UIControlEventValueChanged];
+        // slider结束滑动事件
+        [self.progressSlider addTarget:self action:@selector(sliderValueChangedEndAction:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchCancel | UIControlEventTouchUpOutside];
+    }
     
-    [self.progressSlider addTarget:self action:@selector(sliderValueChangedAction:) forControlEvents:UIControlEventValueChanged];
-    // slider结束滑动事件
-    [self.progressSlider addTarget:self action:@selector(sliderValueChangedEndAction:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchCancel | UIControlEventTouchUpOutside];
 }
 
 - (void)startAnimation {
@@ -278,12 +285,20 @@
     
     if (_fullSize) {
         APP.statusBarHidden = isHidden;
-        self.bottomBar.hidden = NO;
+        
+        if (_isLiving) {
+            self.bottomBar.hidden = NO;
+        } else {
+            self.bottomBar.hidden = isHidden;
+        }
     } else {
         APP.statusBarHidden = NO;
         self.bottomBar.hidden = isHidden;
     }
     
+    if ([_outerDelegate respondsToSelector:@selector(playerControlHidden:)]) {
+        [_outerDelegate playerControlHidden:isHidden];
+    }
 }
 
 - (void)setPlay:(BOOL)play {
@@ -306,6 +321,10 @@
     self.totalTimeLabel.text = dtotal;
     self.progressSlider.value = time/totalTime;
     
+}
+
+- (void)dismissKeyboard {
+    [self.chatView resignResponder];
 }
 
 - (void)errorBtnDismiss {
@@ -345,7 +364,6 @@
 - (void)errorAction:(UIButton *)sender {
     if ([_controlDelegate respondsToSelector:@selector(playerControl:errorAction:)]) {
         [_controlDelegate playerControl:self errorAction:sender.tag];
-        [_errorBtn removeFromSuperview];
     }
 }
 

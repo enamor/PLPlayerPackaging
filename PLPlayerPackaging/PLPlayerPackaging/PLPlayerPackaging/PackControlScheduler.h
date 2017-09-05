@@ -31,4 +31,6 @@
 - (void)endLoading;
 
 - (void)errorBtnDismiss;
+
+- (void)dismissKeyboard;
 @end

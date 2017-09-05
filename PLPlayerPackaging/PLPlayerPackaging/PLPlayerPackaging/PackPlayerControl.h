@@ -35,4 +35,6 @@
 
 - (void)errorBtnDismiss;
 
+- (void)dismissKeyboard;
+
 @end
