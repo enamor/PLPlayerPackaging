@@ -649,14 +649,15 @@
     [self.playView insertSubview:_player.playerView atIndex:0];
     _player.playerView.frame = _playView.bounds;
     
+    if([[UIDevice currentDevice] systemVersion].intValue>=10){
+        // 增加下面这行可以解决iOS10兼容性问题了
+        self.player.avplayer.automaticallyWaitsToMinimizeStalling = NO;
+    }
+
     /**
      * 七牛2.4.3 及以下版本 经常播放失败（需要以下处理）
      
-     if([[UIDevice currentDevice] systemVersion].intValue>=10){
-     // 增加下面这行可以解决iOS10兼容性问题了
-     self.player.avplayer.automaticallyWaitsToMinimizeStalling = NO;
-     }
-     */
+          */
 
     //播放
     [self play];
