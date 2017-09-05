@@ -1,10 +1,10 @@
 # PLPlayerPackaging
-###基于七牛播放器PLPlayer的二次封装
+###基于七牛播放器PLPlayer的二次封装（有全屏弹幕）
 简单一句话实现播放功能
-
+描述了PLPlayer的各种问题
 ---
 title: 基于七牛播放器PLPlayer的二次封装(全屏) 以及七牛iOS播放器各个版本的问题
-date: 2017-09-01 
+date: 2017-09-01
 categories: "iOS"
 tags:
 - Objective-C
@@ -83,8 +83,5 @@ if([[UIDevice currentDevice] systemVersion].intValue>=10){
 ~~~
 
 2、APP支持方向设置为竖屏即可
-
-
-**QQ交流群：518557977**
 
 **博客地址：http://oxy.pub**
